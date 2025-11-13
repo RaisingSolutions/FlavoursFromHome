@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 function App() {
@@ -21,6 +21,23 @@ function App() {
   const [editingItem, setEditingItem] = useState(null)
   const [formData, setFormData] = useState({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '' })
 
+  useEffect(() => {
+    // Restore login state from localStorage on page load
+    const savedLoginState = localStorage.getItem('adminLoginState')
+    if (savedLoginState) {
+      const { isLoggedIn, loggedInUser, isSuperAdmin, adminId } = JSON.parse(savedLoginState)
+      setIsLoggedIn(isLoggedIn)
+      setLoggedInUser(loggedInUser)
+      setIsSuperAdmin(isSuperAdmin)
+      setAdminId(adminId)
+      // Fetch data after restoring login state
+      if (isLoggedIn) {
+        fetchCategories()
+        fetchProducts()
+      }
+    }
+  }, [])
+
   const handleLogin = async () => {
     try {
       const response = await fetch('http://localhost:5000/api/admin/login', {
@@ -39,6 +56,15 @@ function App() {
         setIsSuperAdmin(data.is_super_admin)
         setAdminId(data.id.toString())
         setError('')
+        
+        // Save login state to localStorage
+        localStorage.setItem('adminLoginState', JSON.stringify({
+          isLoggedIn: true,
+          loggedInUser: data.username,
+          isSuperAdmin: data.is_super_admin,
+          adminId: data.id.toString()
+        }))
+        
         // Fetch categories and products after login
         fetchCategories()
         fetchProducts()
@@ -61,10 +87,13 @@ function App() {
     setProducts([])
     setShowCreateForm(false)
     setEditingItem(null)
-    setFormData({ name: '', description: '', price: '', weight: '', category_id: '' })
+    setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '' })
     setUsername('')
     setPassword('')
     setError('')
+    
+    // Clear login state from localStorage
+    localStorage.removeItem('adminLoginState')
   }
 
   const fetchCategories = async () => {
@@ -286,7 +315,10 @@ function App() {
     return (
       <div className="dashboard">
         <nav className="navbar">
-          <div className="navbar-brand">Flavours From Home</div>
+          <div className="navbar-brand">
+            <img src="/src/FFH_Logo.png" alt="FFH Logo" className="navbar-logo" />
+            Flavours From Home Admin Panel
+          </div>
           <div className="navbar-actions">
             {isSuperAdmin && (
               <button 
@@ -561,20 +593,36 @@ function App() {
   return (
     <div className="login-container">
       <div className="login-form">
-        <h2>Admin Login</h2>
+        <div className="login-logo">
+          <img src="/src/FFH_Logo.png" alt="Flavours From Home Logo" className="login-logo-img" />
+          <h1>Flavours From Home Admin</h1>
+          <p className="login-description">
+            Enter your credentials to access the admin panel
+          </p>
+        </div>
+        
         {error && <div className="error">{error}</div>}
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        
+        <div className="form-group">
+          <label htmlFor="username">Username</label>
+          <input
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        </div>
+        
+        <div className="form-group">
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        
         <button onClick={handleLogin}>Login</button>
       </div>
     </div>
