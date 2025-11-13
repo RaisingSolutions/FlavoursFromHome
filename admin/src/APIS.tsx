@@ -78,7 +78,11 @@ export const deleteCategory = async (id: number) => {
   const response = await fetch(`${BASE_URL}/categories/${id}`, {
     method: 'DELETE',
   })
-  return response.ok
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to delete category')
+  }
+  return true
 }
 
 // Product APIs
@@ -109,5 +113,9 @@ export const deleteProduct = async (id: number) => {
   const response = await fetch(`${BASE_URL}/products/${id}`, {
     method: 'DELETE',
   })
-  return response.ok
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to delete product')
+  }
+  return true
 }
