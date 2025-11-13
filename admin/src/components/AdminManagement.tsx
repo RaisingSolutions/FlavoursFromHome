@@ -68,18 +68,22 @@ export default function AdminManagement({ adminId, onClose }: AdminManagementPro
         <div className="drawer-content">
           <div className="create-admin">
             <h3>Create New Admin</h3>
-            <input
-              type="text"
-              placeholder="Username"
-              value={newAdminUsername}
-              onChange={(e) => setNewAdminUsername(e.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={newAdminPassword}
-              onChange={(e) => setNewAdminPassword(e.target.value)}
-            />
+            <div className="form-group">
+              <input
+                type="text"
+                placeholder="Username"
+                value={newAdminUsername}
+                onChange={(e) => setNewAdminUsername(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <input
+                type="password"
+                placeholder="Password"
+                value={newAdminPassword}
+                onChange={(e) => setNewAdminPassword(e.target.value)}
+              />
+            </div>
             <div className="checkbox-container">
               <input
                 type="checkbox"
