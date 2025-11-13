@@ -25,6 +25,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
     res.json({
       id: data.id,
       username: data.username,
+      is_super_admin: data.is_super_admin,
       message: 'Login successful'
     });
   } catch (error) {
@@ -36,7 +37,7 @@ export const getAllAdmins = async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabase
       .from('admin_users')
-      .select('id, username, is_active, created_at')
+      .select('id, username, is_active, is_super_admin, created_at')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -49,7 +50,7 @@ export const getAllAdmins = async (req: Request, res: Response) => {
 
 export const createAdmin = async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, is_super_admin } = req.body;
 
     const saltRounds = 10;
     const password_hash = await bcrypt.hash(password, saltRounds);
@@ -58,9 +59,10 @@ export const createAdmin = async (req: Request, res: Response) => {
       .from('admin_users')
       .insert({
         username,
-        password_hash
+        password_hash,
+        is_super_admin: is_super_admin || false
       })
-      .select('id, username, is_active, created_at')
+      .select('id, username, is_active, is_super_admin, created_at')
       .single();
 
     if (error) throw error;
@@ -83,7 +85,7 @@ export const updateAdminStatus = async (req: Request, res: Response) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
-      .select('id, username, is_active')
+      .select('id, username, is_active, is_super_admin')
       .single();
 
     if (error) throw error;
