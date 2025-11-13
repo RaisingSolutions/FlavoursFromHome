@@ -14,6 +14,12 @@ function App() {
   const [newAdminUsername, setNewAdminUsername] = useState('')
   const [newAdminPassword, setNewAdminPassword] = useState('')
   const [newAdminIsSuperAdmin, setNewAdminIsSuperAdmin] = useState(false)
+  const [activeTab, setActiveTab] = useState('categories')
+  const [categories, setCategories] = useState([])
+  const [products, setProducts] = useState([])
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [editingItem, setEditingItem] = useState(null)
+  const [formData, setFormData] = useState({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '' })
 
   const handleLogin = async () => {
     try {
@@ -33,6 +39,9 @@ function App() {
         setIsSuperAdmin(data.is_super_admin)
         setAdminId(data.id.toString())
         setError('')
+        // Fetch categories and products after login
+        fetchCategories()
+        fetchProducts()
       } else {
         setError(data.error || 'Login failed')
       }
@@ -47,9 +56,35 @@ function App() {
     setIsSuperAdmin(false)
     setAdminId('')
     setShowAdminManagement(false)
+    setActiveTab('categories')
+    setCategories([])
+    setProducts([])
+    setShowCreateForm(false)
+    setEditingItem(null)
+    setFormData({ name: '', description: '', price: '', weight: '', category_id: '' })
     setUsername('')
     setPassword('')
     setError('')
+  }
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/categories')
+      const data = await response.json()
+      setCategories(data)
+    } catch (err) {
+      console.error('Failed to fetch categories')
+    }
+  }
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/products')
+      const data = await response.json()
+      setProducts(data)
+    } catch (err) {
+      console.error('Failed to fetch products')
+    }
   }
 
   const fetchAdminUsers = async () => {
@@ -124,6 +159,126 @@ function App() {
       }
     } catch (err) {
       console.error('Failed to update admin status')
+    }
+  }
+
+  const handleCreateCategory = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          image_url: formData.image_url
+        }),
+      })
+
+      if (response.ok) {
+        setFormData({ name: '', description: '', price: '', weight: '', category_id: '' })
+        setShowCreateForm(false)
+        fetchCategories()
+      }
+    } catch (err) {
+      console.error('Failed to create category')
+    }
+  }
+
+  const handleCreateProduct = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          weight: formData.weight,
+          category_id: parseInt(formData.category_id),
+          image_url: formData.image_url
+        }),
+      })
+
+      if (response.ok) {
+        setFormData({ name: '', description: '', price: '', weight: '', category_id: '' })
+        setShowCreateForm(false)
+        fetchProducts()
+      }
+    } catch (err) {
+      console.error('Failed to create product')
+    }
+  }
+
+  const handleEdit = (item: any) => {
+    setEditingItem(item)
+    setFormData({
+      name: item.name,
+      description: item.description || '',
+      price: item.price?.toString() || '',
+      weight: item.weight || '',
+      category_id: item.category_id?.toString() || '',
+      image_url: item.image_url || ''
+    })
+    setShowCreateForm(true)
+  }
+
+  const handleUpdate = async () => {
+    try {
+      const isCategory = activeTab === 'categories'
+      const url = isCategory 
+        ? `http://localhost:5000/api/categories/${editingItem.id}`
+        : `http://localhost:5000/api/products/${editingItem.id}`
+      
+      const body = isCategory 
+        ? { name: formData.name, description: formData.description, image_url: formData.image_url }
+        : {
+            name: formData.name,
+            description: formData.description,
+            price: parseFloat(formData.price),
+            weight: formData.weight,
+            category_id: parseInt(formData.category_id),
+            image_url: formData.image_url
+          }
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      })
+
+      if (response.ok) {
+        setFormData({ name: '', description: '', price: '', weight: '', category_id: '' })
+        setShowCreateForm(false)
+        setEditingItem(null)
+        isCategory ? fetchCategories() : fetchProducts()
+      }
+    } catch (err) {
+      console.error('Failed to update item')
+    }
+  }
+
+  const handleDelete = async (id: number) => {
+    try {
+      const isCategory = activeTab === 'categories'
+      const url = isCategory 
+        ? `http://localhost:5000/api/categories/${id}`
+        : `http://localhost:5000/api/products/${id}`
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        isCategory ? fetchCategories() : fetchProducts()
+      }
+    } catch (err) {
+      console.error('Failed to delete item')
     }
   }
 
@@ -219,7 +374,185 @@ function App() {
         )}
         
         <div className="content">
-          <h1>Hi {loggedInUser}!</h1>
+          <div className="tabs">
+            <button 
+              className={`tab ${activeTab === 'categories' ? 'active' : ''}`}
+              onClick={() => setActiveTab('categories')}
+            >
+              Categories
+            </button>
+            <button 
+              className={`tab ${activeTab === 'products' ? 'active' : ''}`}
+              onClick={() => setActiveTab('products')}
+            >
+              Products
+            </button>
+          </div>
+
+          <div className="tab-content">
+            {activeTab === 'categories' && (
+              <div className="categories-section">
+                <div className="section-header">
+                  <h2>Categories</h2>
+                  <button className="create-btn" onClick={() => {
+                    setShowCreateForm(true)
+                    setEditingItem(null)
+                    setFormData({ name: '', description: '', price: '', weight: '', category_id: '' })
+                  }}>Create Category</button>
+                </div>
+                
+                {showCreateForm && (
+                  <div className="create-form">
+                    <h3>{editingItem ? 'Edit Category' : 'Create New Category'}</h3>
+                    <input
+                      type="text"
+                      placeholder="Category Name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    />
+                    <textarea
+                      placeholder="Description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    />
+                    <input
+                      type="url"
+                      placeholder="Image URL (optional)"
+                      value={formData.image_url}
+                      onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+                    />
+                    <div className="form-actions">
+                      <button className="create-btn" onClick={editingItem ? handleUpdate : handleCreateCategory}>
+                        {editingItem ? 'Update' : 'Create'}
+                      </button>
+                      <button className="cancel-btn" onClick={() => {
+                        setShowCreateForm(false)
+                        setEditingItem(null)
+                        setFormData({ name: '', description: '', price: '', weight: '', category_id: '' })
+                      }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="items-grid">
+                  {categories.map((category: any) => (
+                    <div key={category.id} className="item-card">
+                      <div className="image-container">
+                        {category.image_url ? (
+                          <img src={category.image_url} alt={category.name} className="item-image" />
+                        ) : (
+                          <div className="placeholder-image">
+                            <span>No Image</span>
+                          </div>
+                        )}
+                      </div>
+                      <h3>{category.name}</h3>
+                      <p>{category.description}</p>
+                      <div className="item-actions">
+                        <button className="edit-btn" onClick={() => handleEdit(category)}>Edit</button>
+                        <button className="delete-btn" onClick={() => handleDelete(category.id)}>Delete</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'products' && (
+              <div className="products-section">
+                <div className="section-header">
+                  <h2>Products</h2>
+                  <button className="create-btn" onClick={() => {
+                    setShowCreateForm(true)
+                    setEditingItem(null)
+                    setFormData({ name: '', description: '', price: '', weight: '', category_id: '' })
+                  }}>Create Product</button>
+                </div>
+                
+                {showCreateForm && (
+                  <div className="create-form">
+                    <h3>{editingItem ? 'Edit Product' : 'Create New Product'}</h3>
+                    <input
+                      type="text"
+                      placeholder="Product Name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    />
+                    <textarea
+                      placeholder="Description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="Price"
+                      value={formData.price}
+                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Weight (e.g., 5kg)"
+                      value={formData.weight}
+                      onChange={(e) => setFormData({...formData, weight: e.target.value})}
+                    />
+                    <select
+                      value={formData.category_id}
+                      onChange={(e) => setFormData({...formData, category_id: e.target.value})}
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map((cat: any) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="url"
+                      placeholder="Image URL (optional)"
+                      value={formData.image_url}
+                      onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+                    />
+                    <div className="form-actions">
+                      <button className="create-btn" onClick={editingItem ? handleUpdate : handleCreateProduct}>
+                        {editingItem ? 'Update' : 'Create'}
+                      </button>
+                      <button className="cancel-btn" onClick={() => {
+                        setShowCreateForm(false)
+                        setEditingItem(null)
+                        setFormData({ name: '', description: '', price: '', weight: '', category_id: '' })
+                      }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="items-grid">
+                  {products.map((product: any) => (
+                    <div key={product.id} className="item-card">
+                      <div className="image-container">
+                        {product.image_url ? (
+                          <img src={product.image_url} alt={product.name} className="item-image" />
+                        ) : (
+                          <div className="placeholder-image">
+                            <span>No Image</span>
+                          </div>
+                        )}
+                      </div>
+                      <h3>{product.name}</h3>
+                      <p>{product.description}</p>
+                      <div className="product-details">
+                        <span className="price">£{product.price}</span>
+                        <span className="weight">{product.weight}</span>
+                        <span className="category">{product.categories?.name}</span>
+                      </div>
+                      <div className="item-actions">
+                        <button className="edit-btn" onClick={() => handleEdit(product)}>Edit</button>
+                        <button className="delete-btn" onClick={() => handleDelete(product.id)}>Delete</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     )
