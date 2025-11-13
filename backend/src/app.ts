@@ -1,9 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import testRoutes from './routes/testRoutes';
-
-dotenv.config();
+import productRoutes from './routes/productRoutes';
+import categoryRoutes from './routes/categoryRoutes';
 
 const app = express();
 
@@ -13,5 +12,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api', testRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
 
 export default app;
