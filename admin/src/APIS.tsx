@@ -50,6 +50,21 @@ export const toggleAdminStatus = async (adminId: string, id: number, is_active: 
   return response.ok
 }
 
+// Order APIs
+export const fetchOrders = async () => {
+  const response = await fetch(`${BASE_URL}/orders`)
+  return response.json()
+}
+
+export const updateOrderStatus = async (id: number, status: string) => {
+  const response = await fetch(`${BASE_URL}/orders/${id}/status`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  })
+  return response.ok
+}
+
 // Category APIs
 export const fetchCategories = async () => {
   const response = await fetch(`${BASE_URL}/categories`)
