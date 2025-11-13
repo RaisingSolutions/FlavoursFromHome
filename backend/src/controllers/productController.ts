@@ -145,7 +145,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
     
     const { error } = await supabase
       .from('products')
-      .update({ is_active: false })
+      .delete()
       .eq('id', id);
 
     if (error) throw error;
