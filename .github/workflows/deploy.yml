@@ -90,7 +90,7 @@ jobs:
     - name: Test and Build Frontend
       run: |
         cd frontend
-        npm ci
+        npm install
         npm run lint || echo "No lint script found"
         npm run type-check || echo "No type-check script found"
         npm run build
@@ -140,7 +140,7 @@ jobs:
     - name: Test and Build Admin
       run: |
         cd admin
-        npm ci
+        npm install
         npm run lint || echo "No lint script found"
         npm run build
 
