@@ -3,6 +3,7 @@ import * as API from '../APIS'
 
 export default function OrdersTab() {
   const [orders, setOrders] = useState([])
+  const [activeTab, setActiveTab] = useState<'pending' | 'ready' | 'delivered'>('pending')
 
   useEffect(() => {
     fetchOrders()
@@ -28,17 +29,40 @@ export default function OrdersTab() {
     }
   }
 
+  const filteredOrders = orders.filter((order: any) => order.status === activeTab)
+
   return (
     <div className="orders-section">
       <div className="section-header">
         <h2>Orders</h2>
       </div>
       
-      {orders.length === 0 ? (
+      <div className="orders-tabs">
+        <button 
+          className={`orders-tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
+          onClick={() => setActiveTab('pending')}
+        >
+          Pending Orders
+        </button>
+        <button 
+          className={`orders-tab-btn ${activeTab === 'ready' ? 'active' : ''}`}
+          onClick={() => setActiveTab('ready')}
+        >
+          Ready Orders
+        </button>
+        <button 
+          className={`orders-tab-btn ${activeTab === 'delivered' ? 'active' : ''}`}
+          onClick={() => setActiveTab('delivered')}
+        >
+          Delivered Orders
+        </button>
+      </div>
+      
+      {filteredOrders.length === 0 ? (
         <div className="no-data-message">
           <div className="no-data-icon">📋</div>
-          <h3>No Orders Yet</h3>
-          <p>Orders will appear here once customers start placing them.</p>
+          <h3>No {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Orders</h3>
+          <p>No orders with status "{activeTab}" at the moment.</p>
         </div>
       ) : (
         <div className="orders-table-container">
@@ -59,7 +83,7 @@ export default function OrdersTab() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order: any) => (
+              {filteredOrders.map((order: any) => (
                 <tr key={order.id}>
                   <td className="order-id">#{order.id}</td>
                   <td className="customer-name">{order.first_name}</td>
@@ -85,18 +109,25 @@ export default function OrdersTab() {
                     </span>
                   </td>
                   <td className="actions-cell">
-                    <select 
-                      className="status-select"
-                      value={order.status} 
-                      onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="preparing">Preparing</option>
-                      <option value="ready">Ready</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
+                    {order.status === 'pending' && (
+                      <button 
+                        className="action-btn ready-btn"
+                        onClick={() => handleStatusUpdate(order.id, 'ready')}
+                      >
+                        Mark as Ready
+                      </button>
+                    )}
+                    {order.status === 'ready' && (
+                      <button 
+                        className="action-btn delivered-btn"
+                        onClick={() => handleStatusUpdate(order.id, 'delivered')}
+                      >
+                        Mark as Delivered
+                      </button>
+                    )}
+                    {order.status === 'delivered' && (
+                      <span className="completed-text">Completed</span>
+                    )}
                   </td>
                 </tr>
               ))}
