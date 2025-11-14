@@ -100,6 +100,60 @@ export const deleteCategory = async (id: number) => {
   return true
 }
 
+// Delivery APIs
+export const fetchDrivers = async () => {
+  const response = await fetch(`${BASE_URL}/admin/drivers`)
+  return response.json()
+}
+
+export const generateRoutes = async (numDrivers: number) => {
+  const response = await fetch(`${BASE_URL}/delivery/generate-routes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ numDrivers }),
+  })
+  return response.json()
+}
+
+export const assignRoute = async (driverId: number, orderIds: number[], routeData: any) => {
+  const response = await fetch(`${BASE_URL}/delivery/assign-route`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ driverId, orderIds, routeData }),
+  })
+  return response.ok
+}
+
+export const createDriver = async (username: string, password: string) => {
+  const adminState = localStorage.getItem('adminLoginState')
+  const adminId = adminState ? JSON.parse(adminState).adminId : ''
+  
+  const response = await fetch(`${BASE_URL}/admin/drivers`, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'admin-id': adminId
+    },
+    body: JSON.stringify({ username, password }),
+  })
+  return response.ok
+}
+
+export const getDriverDeliveries = async (driverId: string) => {
+  const response = await fetch(`${BASE_URL}/delivery/driver-deliveries`, {
+    headers: { 'driver-id': driverId }
+  })
+  return response.json()
+}
+
+export const markAsDelivered = async (orderId: number) => {
+  const response = await fetch(`${BASE_URL}/delivery/mark-delivered/${orderId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  return response.ok
+}
+
 // Product APIs
 export const fetchProducts = async () => {
   const response = await fetch(`${BASE_URL}/products`)

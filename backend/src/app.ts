@@ -5,6 +5,7 @@ import productRoutes from './routes/productRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import adminRoutes from './routes/adminRoutes';
 import orderRoutes from './routes/orderRoutes';
+import deliveryRoutes from './routes/deliveryRoutes';
 
 const app = express();
 
@@ -19,5 +20,6 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/delivery', deliveryRoutes);
 
 export default app;
