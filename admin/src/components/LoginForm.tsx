@@ -29,7 +29,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
     <div className="login-container">
       <div className="login-form">
         <div className="login-logo">
-          <img src="/src/FFH_Logo.png" alt="Flavours From Home Logo" className="login-logo-img" />
+          <img src="https://res.cloudinary.com/dulm4r5mo/image/upload/v1763129727/FFH_Logo_f47yft.png" alt="Flavours From Home Logo" className="login-logo-img" />
           <h1>Flavours From Home Admin</h1>
           <p className="login-description">
             Enter your credentials to access the admin panel

@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import * as API from './API'
+import HomePage from './components/HomePage'
+import CartPage from './components/CartPage'
+import CheckoutPage from './components/CheckoutPage'
+import Toast from './components/Toast'
 
 interface CartItem {
   id: number
@@ -14,14 +18,51 @@ function App() {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
-  const [cart, setCart] = useState<CartItem[]>([])
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    const saved = localStorage.getItem('cart')
+    const timestamp = localStorage.getItem('cartTimestamp')
+    
+    if (saved && timestamp) {
+      const now = Date.now()
+      const savedTime = parseInt(timestamp)
+      const tenMinutes = 10 * 60 * 1000
+      
+      if (now - savedTime < tenMinutes) {
+        return JSON.parse(saved)
+      } else {
+        localStorage.removeItem('cart')
+        localStorage.removeItem('cartTimestamp')
+        localStorage.removeItem('currentPage')
+      }
+    }
+    return []
+  })
   const [cartCount, setCartCount] = useState(0)
-  const [showCart, setShowCart] = useState(false)
+  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout'>(() => {
+    const saved = localStorage.getItem('currentPage')
+    return (saved as 'home' | 'cart' | 'checkout') || 'home'
+  })
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
     fetchCategories()
     fetchProducts()
   }, [])
+
+  useEffect(() => {
+    if (cart.length > 0) {
+      localStorage.setItem('cart', JSON.stringify(cart))
+      localStorage.setItem('cartTimestamp', Date.now().toString())
+    } else {
+      localStorage.removeItem('cart')
+      localStorage.removeItem('cartTimestamp')
+    }
+    setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0))
+  }, [cart])
+
+  useEffect(() => {
+    localStorage.setItem('currentPage', currentPage)
+  }, [currentPage])
 
   const fetchCategories = async () => {
     try {
@@ -61,221 +102,86 @@ function App() {
       const existingItem = prevCart.find(item => item.id === product.id)
       
       if (existingItem) {
-        const updatedCart = prevCart.map(item =>
+        return prevCart.map(item =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
-        setCartCount(updatedCart.reduce((sum, item) => sum + item.quantity, 0))
-        return updatedCart
       } else {
-        const newCart = [...prevCart, {
+        return [...prevCart, {
           id: product.id,
           name: product.name,
           price: product.price,
           quantity: 1,
           image_url: product.image_url
         }]
-        setCartCount(newCart.reduce((sum, item) => sum + item.quantity, 0))
-        return newCart
       }
     })
   }
 
   const updateQuantity = (productId: number, change: number) => {
     setCart(prevCart => {
-      const updatedCart = prevCart.map(item => {
+      return prevCart.map(item => {
         if (item.id === productId) {
           const newQuantity = item.quantity + change
           return newQuantity > 0 ? { ...item, quantity: newQuantity } : null
         }
         return item
       }).filter(Boolean) as CartItem[]
-      
-      setCartCount(updatedCart.reduce((sum, item) => sum + item.quantity, 0))
-      return updatedCart
     })
-  }
-
-  const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)
   }
 
   return (
     <div className="app">
       <nav className="navbar">
         <div className="navbar-brand">
-          <img src="/src/FFH_Logo.png" alt="FFH Logo" className="navbar-logo" />
+          <img src="https://res.cloudinary.com/dulm4r5mo/image/upload/v1763129727/FFH_Logo_f47yft.png" alt="FFH Logo" className="navbar-logo" />
           Flavours From Home
         </div>
         <div className="navbar-actions">
-          <button className="cart-btn" onClick={() => setShowCart(!showCart)}>
+          <button className="cart-btn" onClick={() => setCurrentPage('cart')}>
             🛒 Cart ({cartCount})
           </button>
         </div>
       </nav>
       
       <main className="main-content">
-        {showCart ? (
-          <section className="cart-page">
-            <div className="cart-header">
-              <h2>Your Cart</h2>
-            </div>
-            
-            <div className="cart-content">
-              <div className="cart-items">
-                {cart.length === 0 ? (
-                  <div className="empty-cart">
-                    <p>Your cart is empty</p>
-                    <button className="continue-shopping" onClick={() => setShowCart(false)}>
-                      Start Shopping
-                    </button>
-                  </div>
-                ) : (
-                  cart.map(item => (
-                    <div key={item.id} className="cart-item">
-                      <div className="item-image">
-                        {item.image_url ? (
-                          <img src={item.image_url} alt={item.name} />
-                        ) : (
-                          <div className="placeholder-image">
-                            <span>No Image</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="item-details">
-                        <h3>{item.name}</h3>
-                        <p className="item-price">£{item.price}</p>
-                      </div>
-                      <div className="quantity-controls">
-                        <button 
-                          className="qty-btn"
-                          onClick={() => updateQuantity(item.id, -1)}
-                        >
-                          -
-                        </button>
-                        <span className="quantity">{item.quantity}</span>
-                        <button 
-                          className="qty-btn"
-                          onClick={() => updateQuantity(item.id, 1)}
-                        >
-                          +
-                        </button>
-                      </div>
-                      <div className="item-total">
-                        £{(item.price * item.quantity).toFixed(2)}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-              
-              {cart.length > 0 && (
-                <div className="cart-summary">
-                  <div className="summary-content">
-                    <h3>Order Summary</h3>
-                    <div className="summary-line">
-                      <span>Subtotal ({cartCount} items)</span>
-                      <span>£{getCartTotal()}</span>
-                    </div>
-                    <div className="summary-line total">
-                      <span>Total</span>
-                      <span>£{getCartTotal()}</span>
-                    </div>
-                    <button className="checkout-btn">
-                      Proceed to Checkout
-                    </button>
-                    <button className="continue-shopping" onClick={() => setShowCart(false)}>
-                      Continue Shopping
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
+        {currentPage === 'checkout' ? (
+          <CheckoutPage 
+            cart={cart}
+            cartCount={cartCount}
+            onBackToCart={() => setCurrentPage('cart')}
+            onOrderComplete={() => {
+              setCart([])
+              setCartCount(0)
+              localStorage.removeItem('cart')
+              localStorage.removeItem('cartTimestamp')
+              localStorage.removeItem('currentPage')
+              setCurrentPage('home')
+            }}
+            onShowToast={(message, type) => setToast({ message, type })}
+          />
+        ) : currentPage === 'cart' ? (
+          <CartPage 
+            cart={cart}
+            cartCount={cartCount}
+            onUpdateQuantity={updateQuantity}
+            onContinueShopping={() => setCurrentPage('home')}
+            onCheckout={() => setCurrentPage('checkout')}
+          />
         ) : (
-          <>
-            <section className="hero">
-              <h1>Welcome to Flavours From Home</h1>
-              <p>Authentic ingredients delivered to your door</p>
-            </section>
-
-            <section className="categories">
-              <h2>Shop by Category</h2>
-              <div className="category-filters">
-                <button 
-                  className={`filter-btn ${selectedCategory === null ? 'active' : ''}`}
-                  onClick={() => handleCategoryFilter(null)}
-                >
-                  All Products
-                </button>
-                {categories.map((category: any) => (
-                  <button 
-                    key={category.id}
-                    className={`filter-btn ${selectedCategory === category.id ? 'active' : ''}`}
-                    onClick={() => handleCategoryFilter(category.id)}
-                  >
-                    {category.name}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="products">
-              <h2>Our Products</h2>
-              <div className="products-grid">
-                {products.map((product: any) => (
-                  <div key={product.id} className="product-card">
-                    <div className="product-image">
-                      {product.image_url ? (
-                        <img src={product.image_url} alt={product.name} />
-                      ) : (
-                        <div className="placeholder-image">
-                          <span>No Image</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="product-info">
-                      <h3>{product.name}</h3>
-                      <p className="product-description">{product.description}</p>
-                      <div className="product-details">
-                        <span className="price">£{product.price}</span>
-                        <span className="weight">{product.weight}</span>
-                      </div>
-                      {cart.find(item => item.id === product.id) ? (
-                        <div className="quantity-controls">
-                          <button 
-                            className="qty-btn"
-                            onClick={() => updateQuantity(product.id, -1)}
-                          >
-                            -
-                          </button>
-                          <span className="quantity">
-                            {cart.find(item => item.id === product.id)?.quantity}
-                          </span>
-                          <button 
-                            className="qty-btn"
-                            onClick={() => updateQuantity(product.id, 1)}
-                          >
-                            +
-                          </button>
-                        </div>
-                      ) : (
-                        <button 
-                          className="add-to-cart-btn"
-                          onClick={() => addToCart(product)}
-                        >
-                          Add to Cart
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </>
+          <HomePage 
+            categories={categories}
+            products={products}
+            selectedCategory={selectedCategory}
+            cart={cart}
+            onCategoryFilter={handleCategoryFilter}
+            onAddToCart={addToCart}
+            onUpdateQuantity={updateQuantity}
+          />
         )}
       </main>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   )
 }
