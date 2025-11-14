@@ -70,6 +70,12 @@ jobs:
           sudo docker tag ffh-backend:$TIMESTAMP ffh-backend:latest
           sudo docker run -d --name ffh-backend -p 5000:5000 --env-file .env --restart unless-stopped ffh-backend:latest
           
+          # Debug: Check container status
+          echo "=== Container Status ==="
+          sudo docker ps -a | grep ffh-backend
+          echo "=== Container Logs ==="
+          sudo docker logs ffh-backend || true
+          
           # Health check
           sleep 10
           curl -f http://localhost:5000/api/status || exit 1
