@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  backend:
     runs-on: ubuntu-latest
     
     steps:
@@ -18,7 +18,7 @@ jobs:
         node-version: '18'
         cache: 'npm'
 
-    - name: Test Backend
+    - name: Test and Build Backend
       run: |
         cd backend
         npm ci
@@ -26,26 +26,6 @@ jobs:
         npm run test || echo "No test script found"
         npm run build
 
-    - name: Test Frontend
-      run: |
-        cd frontend
-        npm ci
-        npm run lint || echo "No lint script found"
-        npm run type-check || echo "No type-check script found"
-        npm run build
-
-    - name: Test Admin
-      run: |
-        cd admin
-        npm ci
-        npm run lint || echo "No lint script found"
-        npm run build
-
-  backend:
-    needs: test
-    runs-on: ubuntu-latest
-    
-    steps:
     - name: Deploy Backend
       uses: appleboy/ssh-action@v0.1.5
       with:
@@ -92,6 +72,23 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Test and Build Frontend
+      run: |
+        cd frontend
+        npm ci
+        npm run lint || echo "No lint script found"
+        npm run type-check || echo "No type-check script found"
+        npm run build
+
     - name: Deploy Frontend
       uses: appleboy/ssh-action@v0.1.5
       with:
@@ -126,6 +123,22 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Test and Build Admin
+      run: |
+        cd admin
+        npm ci
+        npm run lint || echo "No lint script found"
+        npm run build
+
     - name: Deploy Admin
       uses: appleboy/ssh-action@v0.1.5
       with:
