@@ -18,7 +18,7 @@ export default function Dashboard({ isSuperAdmin, adminId, onSignOut }: Dashboar
     <div className="dashboard">
       <nav className="navbar">
         <div className="navbar-brand">
-          <img src="/src/FFH_Logo.png" alt="FFH Logo" className="navbar-logo" />
+          <img src="https://res.cloudinary.com/dulm4r5mo/image/upload/v1763129727/FFH_Logo_f47yft.png" alt="FFH Logo" className="navbar-logo" />
           Flavours From Home Admin Panel
         </div>
         <div className="navbar-actions">
