@@ -4,6 +4,7 @@ import * as API from './API'
 import HomePage from './components/HomePage'
 import CartPage from './components/CartPage'
 import CheckoutPage from './components/CheckoutPage'
+import Toast from './components/Toast'
 
 interface CartItem {
   id: number
@@ -20,6 +21,7 @@ function App() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [cartCount, setCartCount] = useState(0)
   const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout'>('home')
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
     fetchCategories()
@@ -125,6 +127,7 @@ function App() {
               setCartCount(0)
               setCurrentPage('home')
             }}
+            onShowToast={(message, type) => setToast({ message, type })}
           />
         ) : currentPage === 'cart' ? (
           <CartPage 
@@ -146,6 +149,7 @@ function App() {
           />
         )}
       </main>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   )
 }

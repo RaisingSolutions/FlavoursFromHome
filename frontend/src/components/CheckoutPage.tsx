@@ -13,13 +13,15 @@ interface CheckoutPageProps {
   cartCount: number
   onBackToCart: () => void
   onOrderComplete: () => void
+  onShowToast: (message: string, type: 'success' | 'error') => void
 }
 
 export default function CheckoutPage({ 
   cart, 
   cartCount, 
   onBackToCart,
-  onOrderComplete
+  onOrderComplete,
+  onShowToast
 }: CheckoutPageProps) {
   const [firstName, setFirstName] = useState('')
   const [email, setEmail] = useState('')
@@ -27,13 +29,11 @@ export default function CheckoutPage({
   const [address, setAddress] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState('')
 
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
     setIsSubmitting(true)
 
     try {
@@ -59,10 +59,10 @@ export default function CheckoutPage({
       if (!response.ok) throw new Error('Failed to create order')
 
       const order = await response.json()
-      alert(`Order #${order.id} placed successfully! We'll deliver to ${address}`)
+      onShowToast(`Order #${order.id} placed successfully! We'll deliver to ${address}`, 'success')
       onOrderComplete()
     } catch (err) {
-      setError('Failed to place order. Please try again.')
+      onShowToast('Failed to place order. Please try again.', 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -169,7 +169,7 @@ export default function CheckoutPage({
             </div>
           </div>
 
-          {error && <div className="error-message">{error}</div>}
+
 
           <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={onBackToCart}>
