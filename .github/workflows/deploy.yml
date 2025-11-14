@@ -1,9 +1,7 @@
-name: CI/CD Pipeline
+name: Deploy to Production
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
     branches: [ main ]
 
 jobs:
@@ -43,15 +41,11 @@ jobs:
         npm run lint || echo "No lint script found"
         npm run build
 
-  deploy:
+  backend:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
     - name: Deploy Backend
       uses: appleboy/ssh-action@v0.1.5
       with:
@@ -59,15 +53,6 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # Install Docker if not exists
-          if ! command -v docker &> /dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y docker.io
-            sudo systemctl start docker
-            sudo systemctl enable docker
-            sudo usermod -aG docker ubuntu
-          fi
-          
           # Clone/update repository
           if [ -d "FlavoursFromHome" ]; then
             cd FlavoursFromHome
@@ -91,19 +76,22 @@ jobs:
           sudo docker stop ffh-backend || true
           sudo docker rm ffh-backend || true
           
-          # Build new backend image with timestamp tag
+          # Build and start backend
           cd backend
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           sudo docker build -t ffh-backend:$TIMESTAMP .
           sudo docker tag ffh-backend:$TIMESTAMP ffh-backend:latest
-          
-          # Start new backend container
           sudo docker run -d --name ffh-backend -p 5000:5000 --env-file .env --restart unless-stopped ffh-backend:latest
           
           # Health check
           sleep 10
           curl -f http://localhost:5000/api || exit 1
-          
+
+  frontend:
+    needs: backend
+    runs-on: ubuntu-latest
+    
+    steps:
     - name: Deploy Frontend
       uses: appleboy/ssh-action@v0.1.5
       with:
@@ -122,19 +110,22 @@ jobs:
           sudo docker stop ffh-frontend || true
           sudo docker rm ffh-frontend || true
           
-          # Build new frontend image with timestamp tag
+          # Build and start frontend
           cd frontend
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           sudo docker build -t ffh-frontend:$TIMESTAMP .
           sudo docker tag ffh-frontend:$TIMESTAMP ffh-frontend:latest
-          
-          # Start new frontend container
           sudo docker run -d --name ffh-frontend -p 3000:80 --restart unless-stopped ffh-frontend:latest
           
           # Health check
           sleep 5
           curl -f http://localhost:3000 || exit 1
-          
+
+  admin:
+    needs: frontend
+    runs-on: ubuntu-latest
+    
+    steps:
     - name: Deploy Admin
       uses: appleboy/ssh-action@v0.1.5
       with:
@@ -153,13 +144,11 @@ jobs:
           sudo docker stop ffh-admin || true
           sudo docker rm ffh-admin || true
           
-          # Build new admin image with timestamp tag
+          # Build and start admin
           cd admin
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           sudo docker build -t ffh-admin:$TIMESTAMP .
           sudo docker tag ffh-admin:$TIMESTAMP ffh-admin:latest
-          
-          # Start new admin container
           sudo docker run -d --name ffh-admin -p 3001:80 --restart unless-stopped ffh-admin:latest
           
           # Setup Nginx reverse proxy
@@ -172,6 +161,11 @@ jobs:
           sleep 5
           curl -f http://localhost:3001 || exit 1
 
+  cleanup:
+    needs: admin
+    runs-on: ubuntu-latest
+    
+    steps:
     - name: Cleanup Old Images
       uses: appleboy/ssh-action@v0.1.5
       with:
@@ -191,8 +185,10 @@ jobs:
           sudo docker volume prune -f
           sudo docker network prune -f
           
-          # Show remaining images and containers
-          echo "=== Remaining Images ==="
-          sudo docker images
-          echo "=== Running Containers ==="
+          # Show deployment status
+          echo "=== Deployment Complete ==="
           sudo docker ps
+          echo "=== Available Services ==="
+          echo "Frontend: http://35.177.125.164/"
+          echo "Admin: http://35.177.125.164/admin/"
+          echo "API: http://35.177.125.164/api/"
