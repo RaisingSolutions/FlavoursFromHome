@@ -15,7 +15,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18'
+        node-version: '20'
 
     - name: Test and Build Backend
       run: |
@@ -72,7 +72,7 @@ jobs:
           
           # Health check
           sleep 10
-          curl -f http://localhost:5000/api || exit 1
+          curl -f http://localhost:5000/api/status || exit 1
 
   frontend:
     needs: backend
@@ -85,7 +85,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18'
+        node-version: '20'
 
     - name: Test and Build Frontend
       run: |
@@ -135,7 +135,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18'
+        node-version: '20'
 
     - name: Test and Build Admin
       run: |
