@@ -18,15 +18,51 @@ function App() {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
-  const [cart, setCart] = useState<CartItem[]>([])
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    const saved = localStorage.getItem('cart')
+    const timestamp = localStorage.getItem('cartTimestamp')
+    
+    if (saved && timestamp) {
+      const now = Date.now()
+      const savedTime = parseInt(timestamp)
+      const tenMinutes = 10 * 60 * 1000
+      
+      if (now - savedTime < tenMinutes) {
+        return JSON.parse(saved)
+      } else {
+        localStorage.removeItem('cart')
+        localStorage.removeItem('cartTimestamp')
+        localStorage.removeItem('currentPage')
+      }
+    }
+    return []
+  })
   const [cartCount, setCartCount] = useState(0)
-  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout'>('home')
+  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout'>(() => {
+    const saved = localStorage.getItem('currentPage')
+    return (saved as 'home' | 'cart' | 'checkout') || 'home'
+  })
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
     fetchCategories()
     fetchProducts()
   }, [])
+
+  useEffect(() => {
+    if (cart.length > 0) {
+      localStorage.setItem('cart', JSON.stringify(cart))
+      localStorage.setItem('cartTimestamp', Date.now().toString())
+    } else {
+      localStorage.removeItem('cart')
+      localStorage.removeItem('cartTimestamp')
+    }
+    setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0))
+  }, [cart])
+
+  useEffect(() => {
+    localStorage.setItem('currentPage', currentPage)
+  }, [currentPage])
 
   const fetchCategories = async () => {
     try {
@@ -66,39 +102,32 @@ function App() {
       const existingItem = prevCart.find(item => item.id === product.id)
       
       if (existingItem) {
-        const updatedCart = prevCart.map(item =>
+        return prevCart.map(item =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
-        setCartCount(updatedCart.reduce((sum, item) => sum + item.quantity, 0))
-        return updatedCart
       } else {
-        const newCart = [...prevCart, {
+        return [...prevCart, {
           id: product.id,
           name: product.name,
           price: product.price,
           quantity: 1,
           image_url: product.image_url
         }]
-        setCartCount(newCart.reduce((sum, item) => sum + item.quantity, 0))
-        return newCart
       }
     })
   }
 
   const updateQuantity = (productId: number, change: number) => {
     setCart(prevCart => {
-      const updatedCart = prevCart.map(item => {
+      return prevCart.map(item => {
         if (item.id === productId) {
           const newQuantity = item.quantity + change
           return newQuantity > 0 ? { ...item, quantity: newQuantity } : null
         }
         return item
       }).filter(Boolean) as CartItem[]
-      
-      setCartCount(updatedCart.reduce((sum, item) => sum + item.quantity, 0))
-      return updatedCart
     })
   }
 
@@ -125,6 +154,9 @@ function App() {
             onOrderComplete={() => {
               setCart([])
               setCartCount(0)
+              localStorage.removeItem('cart')
+              localStorage.removeItem('cartTimestamp')
+              localStorage.removeItem('currentPage')
               setCurrentPage('home')
             }}
             onShowToast={(message, type) => setToast({ message, type })}
