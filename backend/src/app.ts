@@ -9,7 +9,8 @@ import orderRoutes from './routes/orderRoutes';
 const app = express();
 
 // Middleware
-app.use(cors());
+const corsOrigin = process.env.CORS_ORIGIN === '*' ? true : process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'];
+app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
 
 // Routes
