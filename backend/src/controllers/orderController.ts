@@ -41,6 +41,66 @@ export const getAllOrders = async (req: Request, res: Response) => {
   }
 };
 
+export const createOrder = async (req: Request, res: Response) => {
+  try {
+    const { first_name, email, phone_number, address, payment_method, total_amount, items } = req.body;
+
+    // Create order
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        first_name,
+        email,
+        phone_number,
+        address,
+        payment_method,
+        total_amount,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error('Order creation error:', orderError);
+      throw orderError;
+    }
+
+    // Get product prices
+    const productIds = items.map((item: any) => item.product_id);
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select('id, price')
+      .in('id', productIds);
+
+    if (productsError) throw productsError;
+
+    // Create order items with prices
+    const orderItems = items.map((item: any) => {
+      const product = products?.find(p => p.id === item.product_id);
+      return {
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: product?.price
+      };
+    });
+
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) {
+      console.error('Order items creation error:', itemsError);
+      throw itemsError;
+    }
+
+    res.status(201).json(order);
+  } catch (error: any) {
+    console.error('Create order error:', error);
+    res.status(400).json({ error: 'Failed to create order', details: error.message });
+  }
+};
+
 export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
