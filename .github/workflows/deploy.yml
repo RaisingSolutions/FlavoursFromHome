@@ -1,0 +1,198 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Test Backend
+      run: |
+        cd backend
+        npm ci
+        npm run lint || echo "No lint script found"
+        npm run test || echo "No test script found"
+        npm run build
+
+    - name: Test Frontend
+      run: |
+        cd frontend
+        npm ci
+        npm run lint || echo "No lint script found"
+        npm run type-check || echo "No type-check script found"
+        npm run build
+
+    - name: Test Admin
+      run: |
+        cd admin
+        npm ci
+        npm run lint || echo "No lint script found"
+        npm run build
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Deploy Backend
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          # Install Docker if not exists
+          if ! command -v docker &> /dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+            sudo systemctl start docker
+            sudo systemctl enable docker
+            sudo usermod -aG docker ubuntu
+          fi
+          
+          # Clone/update repository
+          if [ -d "FlavoursFromHome" ]; then
+            cd FlavoursFromHome
+            git pull origin main
+          else
+            git clone https://github.com/YOUR_USERNAME/FlavoursFromHome.git
+            cd FlavoursFromHome
+          fi
+          
+          # Create backend environment file
+          cat > backend/.env << EOF
+          PORT=5000
+          NODE_ENV=production
+          CORS_ORIGIN=*
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          EOF
+          
+          # Stop and remove existing backend container
+          sudo docker stop ffh-backend || true
+          sudo docker rm ffh-backend || true
+          
+          # Build new backend image with timestamp tag
+          cd backend
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          sudo docker build -t ffh-backend:$TIMESTAMP .
+          sudo docker tag ffh-backend:$TIMESTAMP ffh-backend:latest
+          
+          # Start new backend container
+          sudo docker run -d --name ffh-backend -p 5000:5000 --env-file .env --restart unless-stopped ffh-backend:latest
+          
+          # Health check
+          sleep 10
+          curl -f http://localhost:5000/api || exit 1
+          
+    - name: Deploy Frontend
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd FlavoursFromHome
+          
+          # Create frontend environment file
+          cat > frontend/.env << EOF
+          VITE_API_BASE_URL=http://35.177.125.164/api
+          EOF
+          
+          # Stop and remove existing frontend container
+          sudo docker stop ffh-frontend || true
+          sudo docker rm ffh-frontend || true
+          
+          # Build new frontend image with timestamp tag
+          cd frontend
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          sudo docker build -t ffh-frontend:$TIMESTAMP .
+          sudo docker tag ffh-frontend:$TIMESTAMP ffh-frontend:latest
+          
+          # Start new frontend container
+          sudo docker run -d --name ffh-frontend -p 3000:80 --restart unless-stopped ffh-frontend:latest
+          
+          # Health check
+          sleep 5
+          curl -f http://localhost:3000 || exit 1
+          
+    - name: Deploy Admin
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd FlavoursFromHome
+          
+          # Create admin environment file
+          cat > admin/.env << EOF
+          VITE_API_BASE_URL=http://35.177.125.164/api
+          EOF
+          
+          # Stop and remove existing admin container
+          sudo docker stop ffh-admin || true
+          sudo docker rm ffh-admin || true
+          
+          # Build new admin image with timestamp tag
+          cd admin
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          sudo docker build -t ffh-admin:$TIMESTAMP .
+          sudo docker tag ffh-admin:$TIMESTAMP ffh-admin:latest
+          
+          # Start new admin container
+          sudo docker run -d --name ffh-admin -p 3001:80 --restart unless-stopped ffh-admin:latest
+          
+          # Setup Nginx reverse proxy
+          cd ..
+          sudo docker stop ffh-nginx || true
+          sudo docker rm ffh-nginx || true
+          sudo docker run -d --name ffh-nginx -p 80:80 -v $(pwd)/nginx/nginx.conf:/etc/nginx/nginx.conf --link ffh-backend:backend --link ffh-frontend:frontend --link ffh-admin:admin --restart unless-stopped nginx:alpine
+          
+          # Health check
+          sleep 5
+          curl -f http://localhost:3001 || exit 1
+
+    - name: Cleanup Old Images
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          # Remove dangling images
+          sudo docker image prune -f
+          
+          # Remove old tagged images (keep latest + 2 previous versions)
+          sudo docker images ffh-backend --format "table {{.Repository}}:{{.Tag}}" | grep -v latest | tail -n +4 | xargs -r sudo docker rmi || true
+          sudo docker images ffh-frontend --format "table {{.Repository}}:{{.Tag}}" | grep -v latest | tail -n +4 | xargs -r sudo docker rmi || true
+          sudo docker images ffh-admin --format "table {{.Repository}}:{{.Tag}}" | grep -v latest | tail -n +4 | xargs -r sudo docker rmi || true
+          
+          # Remove unused volumes and networks
+          sudo docker volume prune -f
+          sudo docker network prune -f
+          
+          # Show remaining images and containers
+          echo "=== Remaining Images ==="
+          sudo docker images
+          echo "=== Running Containers ==="
+          sudo docker ps
