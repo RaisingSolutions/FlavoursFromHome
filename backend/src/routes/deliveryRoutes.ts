@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { generateRoutes, assignRoute, getDriverDeliveries, markAsDelivered } from '../controllers/deliveryController';
+import { generateRoutes, generateRoutesFromOrders, assignRoute, getDriverDeliveries, markAsDelivered } from '../controllers/deliveryController';
 
 const router = Router();
 
 router.post('/generate-routes', generateRoutes);
+router.post('/generate-routes-from-orders', generateRoutesFromOrders);
 router.post('/assign-route', assignRoute);
 router.get('/driver-deliveries', getDriverDeliveries);
 router.put('/mark-delivered/:id', markAsDelivered);

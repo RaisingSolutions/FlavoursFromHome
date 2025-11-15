@@ -1095,6 +1095,21 @@ body {
   background-color: rgba(34, 120, 87, 0.05);
 }
 
+.ready-orders-list {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(34, 120, 87, 0.1);
+}
+
+.ready-orders-list h3 {
+  color: hsl(140, 50%, 35%);
+  margin-bottom: 1rem;
+}
+
 /* Driver View */
 .driver-view {
   padding: 1rem;

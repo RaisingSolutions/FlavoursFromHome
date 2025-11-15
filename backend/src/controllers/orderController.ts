@@ -15,6 +15,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
         payment_method,
         order_date,
         status,
+        driver_id,
         order_items (
           quantity,
           products (
@@ -26,9 +27,21 @@ export const getAllOrders = async (req: Request, res: Response) => {
 
     if (error) throw error;
 
-    // Format the data to include product names
+    // Get driver usernames
+    const driverIds = [...new Set(data.map((o: any) => o.driver_id).filter(Boolean))];
+    let drivers: any[] = [];
+    if (driverIds.length > 0) {
+      const { data: driversData } = await supabase
+        .from('admin_users')
+        .select('id, username')
+        .in('id', driverIds);
+      drivers = driversData || [];
+    }
+
+    // Format the data to include product names and driver username
     const formattedOrders = data.map(order => ({
       ...order,
+      driver_username: drivers.find((d: any) => d.id === order.driver_id)?.username,
       order_items: order.order_items.map((item: any) => ({
         quantity: item.quantity,
         product_name: item.products.name
