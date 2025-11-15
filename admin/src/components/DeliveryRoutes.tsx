@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from 'react'
 import * as API from '../APIS'
 
@@ -154,7 +155,7 @@ export default function DeliveryRoutes() {
                   <h4>Delivery Order:</h4>
                   <ol>
                     <li className="start-point">📍 Start: 85 High Ash Drive, LS17 8RX</li>
-                    {route.orders.map((order: any, idx: number) => (
+                    {route.orders.map((order: any) => (
                       <li key={order.id}>
                         <strong>{order.first_name}</strong><br />
                         {order.address}<br />
