@@ -929,6 +929,231 @@ body {
   font-size: 13px;
 }
 
+/* Delivery Routes */
+.delivery-routes-section {
+  padding: 1rem;
+}
+
+.route-generator {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(34, 120, 87, 0.1);
+}
+
+.generator-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.generator-controls label {
+  font-weight: 600;
+  color: #333;
+}
+
+.generator-controls input {
+  width: 80px;
+  padding: 0.5rem;
+  border: 1px solid rgba(34, 120, 87, 0.2);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.routes-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.route-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid rgba(34, 120, 87, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(34, 120, 87, 0.1);
+}
+
+.route-card h3 {
+  color: hsl(140, 50%, 35%);
+  margin-bottom: 1rem;
+}
+
+.route-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.route-stats span {
+  background: rgba(34, 120, 87, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.route-orders {
+  margin: 1.5rem 0;
+}
+
+.route-orders h4 {
+  color: #333;
+  margin-bottom: 0.75rem;
+}
+
+.route-orders ol {
+  list-style-position: inside;
+  padding-left: 0;
+}
+
+.route-orders li {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: rgba(34, 120, 87, 0.05);
+  border-radius: 6px;
+  border-left: 3px solid hsl(140, 50%, 35%);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.route-orders li.start-point {
+  background: rgba(34, 120, 87, 0.15);
+  font-weight: 600;
+  border-left-color: hsl(140, 50%, 30%);
+}
+
+.assign-driver {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(34, 120, 87, 0.2);
+}
+
+.assign-driver label {
+  font-weight: 600;
+  color: #333;
+}
+
+.assign-driver select {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid rgba(34, 120, 87, 0.2);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.drivers-list {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(34, 120, 87, 0.1);
+}
+
+.drivers-list h3 {
+  color: hsl(140, 50%, 35%);
+  margin-bottom: 1rem;
+}
+
+.drivers-table {
+  overflow-x: auto;
+}
+
+.drivers-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.drivers-table th {
+  background: linear-gradient(135deg, hsl(140, 50%, 35%) 0%, hsl(150, 45%, 40%) 100%);
+  color: white;
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.drivers-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(34, 120, 87, 0.1);
+  color: #333;
+  font-size: 14px;
+}
+
+.drivers-table tbody tr:hover {
+  background-color: rgba(34, 120, 87, 0.05);
+}
+
+/* Driver View */
+.driver-view {
+  padding: 1rem;
+}
+
+.delivery-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.delivery-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(34, 120, 87, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(34, 120, 87, 0.1);
+}
+
+.delivery-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(34, 120, 87, 0.1);
+}
+
+.delivery-header h3 {
+  color: hsl(140, 50%, 35%);
+  margin: 0;
+}
+
+.delivery-details {
+  margin-bottom: 1.5rem;
+}
+
+.delivery-details p {
+  margin: 0.5rem 0;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.delivery-card .action-btn {
+  width: 100%;
+}
+
+.delivery-card .completed-text {
+  display: block;
+  text-align: center;
+  padding: 0.75rem;
+  background: rgba(40, 167, 69, 0.1);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .orders-tabs {
@@ -938,6 +1163,15 @@ body {
   
   .orders-tab-btn {
     border-radius: 6px;
+  }
+  
+  .routes-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .generator-controls {
+    flex-direction: column;
+    align-items: flex-start;
   }
   .login-form {
     margin: 1rem;

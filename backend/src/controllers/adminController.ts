@@ -26,6 +26,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
       id: data.id,
       username: data.username,
       is_super_admin: data.is_super_admin,
+      role: data.role || 'admin',
       message: 'Login successful'
     });
   } catch (error) {
@@ -110,5 +111,47 @@ export const deleteAdmin = async (req: Request, res: Response) => {
     res.json({ message: 'Admin user deleted successfully' });
   } catch (error) {
     res.status(400).json({ error: 'Failed to delete admin user' });
+  }
+};
+
+export const getDrivers = async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('id, username')
+      .eq('is_active', true)
+      .eq('role', 'driver');
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch drivers' });
+  }
+};
+
+export const createDriver = async (req: Request, res: Response) => {
+  try {
+    const { username, password } = req.body;
+
+    const saltRounds = 10;
+    const password_hash = await bcrypt.hash(password, saltRounds);
+
+    const { data, error } = await supabase
+      .from('admin_users')
+      .insert({
+        username,
+        password_hash,
+        is_super_admin: false,
+        role: 'driver'
+      })
+      .select('id, username, is_active, role, created_at')
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(data);
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to create driver' });
   }
 };

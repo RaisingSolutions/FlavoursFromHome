@@ -3,16 +3,19 @@ import AdminManagement from './AdminManagement'
 import OrdersTab from './OrdersTab'
 import CategoriesTab from './CategoriesTab'
 import ProductsTab from './ProductsTab'
+import DeliveryRoutes from './DeliveryRoutes'
+import DriverView from './DriverView'
 
 interface DashboardProps {
   isSuperAdmin: boolean
   adminId: string
+  userRole: string
   onSignOut: () => void
 }
 
-export default function Dashboard({ isSuperAdmin, adminId, onSignOut }: DashboardProps) {
+export default function Dashboard({ isSuperAdmin, adminId, userRole, onSignOut }: DashboardProps) {
   const [showAdminManagement, setShowAdminManagement] = useState(false)
-  const [activeTab, setActiveTab] = useState('orders')
+  const [activeTab, setActiveTab] = useState(userRole === 'driver' ? 'delivery' : 'orders')
 
   return (
     <div className="dashboard">
@@ -42,32 +45,47 @@ export default function Dashboard({ isSuperAdmin, adminId, onSignOut }: Dashboar
       )}
       
       <div className="content">
-        <div className="tabs">
-          <button 
-            className={`tab ${activeTab === 'orders' ? 'active' : ''}`}
-            onClick={() => setActiveTab('orders')}
-          >
-            Orders
-          </button>
-          <button 
-            className={`tab ${activeTab === 'categories' ? 'active' : ''}`}
-            onClick={() => setActiveTab('categories')}
-          >
-            Categories
-          </button>
-          <button 
-            className={`tab ${activeTab === 'products' ? 'active' : ''}`}
-            onClick={() => setActiveTab('products')}
-          >
-            Products
-          </button>
-        </div>
+        {userRole === 'driver' ? (
+          <div className="tab-content">
+            <DriverView driverId={adminId} />
+          </div>
+        ) : (
+          <>
+            <div className="tabs">
+              <button 
+                className={`tab ${activeTab === 'orders' ? 'active' : ''}`}
+                onClick={() => setActiveTab('orders')}
+              >
+                Orders
+              </button>
+              <button 
+                className={`tab ${activeTab === 'categories' ? 'active' : ''}`}
+                onClick={() => setActiveTab('categories')}
+              >
+                Categories
+              </button>
+              <button 
+                className={`tab ${activeTab === 'products' ? 'active' : ''}`}
+                onClick={() => setActiveTab('products')}
+              >
+                Products
+              </button>
+              <button 
+                className={`tab ${activeTab === 'delivery' ? 'active' : ''}`}
+                onClick={() => setActiveTab('delivery')}
+              >
+                Delivery Routes
+              </button>
+            </div>
 
-        <div className="tab-content">
-          {activeTab === 'orders' && <OrdersTab />}
-          {activeTab === 'categories' && <CategoriesTab />}
-          {activeTab === 'products' && <ProductsTab />}
-        </div>
+            <div className="tab-content">
+              {activeTab === 'orders' && <OrdersTab />}
+              {activeTab === 'categories' && <CategoriesTab />}
+              {activeTab === 'products' && <ProductsTab />}
+              {activeTab === 'delivery' && <DeliveryRoutes />}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
