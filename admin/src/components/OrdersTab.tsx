@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import * as API from '../APIS'
 
 export default function OrdersTab() {
-  const [orders, setOrders] = useState([])
+  const [orders, setOrders] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'pending' | 'ready' | 'delivered'>('pending')
 
   useEffect(() => {
@@ -13,9 +13,10 @@ export default function OrdersTab() {
   const fetchOrders = async () => {
     try {
       const data = await API.fetchOrders()
-      setOrders(data)
+      setOrders(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error('Failed to fetch orders')
+      setOrders([])
     }
   }
 
