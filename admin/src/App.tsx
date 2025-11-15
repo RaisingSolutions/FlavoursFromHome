@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react'
 import './App.css'
 import LoginForm from './components/LoginForm'
@@ -12,11 +13,13 @@ function App() {
   useEffect(() => {
     const savedLoginState = localStorage.getItem('adminLoginState')
     if (savedLoginState) {
-      const { isLoggedIn, isSuperAdmin, adminId, role } = JSON.parse(savedLoginState)
-      setIsLoggedIn(isLoggedIn)
-      setIsSuperAdmin(isSuperAdmin)
-      setAdminId(adminId)
-      setUserRole(role || 'admin')
+      const parsed = JSON.parse(savedLoginState)
+      if (parsed.isLoggedIn) {
+        setIsLoggedIn(parsed.isLoggedIn)
+        setIsSuperAdmin(parsed.isSuperAdmin)
+        setAdminId(parsed.adminId)
+        setUserRole(parsed.role || 'admin')
+      }
     }
   }, [])
 
