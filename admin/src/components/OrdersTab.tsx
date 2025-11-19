@@ -4,7 +4,7 @@ import * as API from '../APIS'
 
 export default function OrdersTab() {
   const [orders, setOrders] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState<'pending' | 'ready' | 'delivered'>('pending')
+  const [activeTab, setActiveTab] = useState<'pending' | 'ready' | 'out_for_delivery' | 'delivered'>('pending')
 
   useEffect(() => {
     fetchOrders()
@@ -31,7 +31,15 @@ export default function OrdersTab() {
     }
   }
 
-  const filteredOrders = orders.filter((order: any) => order.status === activeTab)
+  const filteredOrders = orders.filter((order: any) => {
+    if (activeTab === 'out_for_delivery') {
+      return order.status === 'ready' && order.driver_id
+    }
+    if (activeTab === 'ready') {
+      return order.status === 'ready' && !order.driver_id
+    }
+    return order.status === activeTab
+  })
 
   return (
     <div className="orders-section">
@@ -51,6 +59,12 @@ export default function OrdersTab() {
           onClick={() => setActiveTab('ready')}
         >
           Ready Orders
+        </button>
+        <button 
+          className={`orders-tab-btn ${activeTab === 'out_for_delivery' ? 'active' : ''}`}
+          onClick={() => setActiveTab('out_for_delivery')}
+        >
+          Out for Delivery
         </button>
         <button 
           className={`orders-tab-btn ${activeTab === 'delivered' ? 'active' : ''}`}
@@ -81,6 +95,7 @@ export default function OrdersTab() {
                 <th>Payment</th>
                 <th>Date</th>
                 <th>Status</th>
+                {activeTab === 'out_for_delivery' && <th>Driver</th>}
                 <th>Actions</th>
               </tr>
             </thead>
@@ -107,9 +122,12 @@ export default function OrdersTab() {
                   <td className="date">{new Date(order.order_date).toLocaleDateString()}</td>
                   <td className="status-cell">
                     <span className={`status-badge status-${order.status?.toLowerCase()}`}>
-                      {order.status}
+                      {activeTab === 'out_for_delivery' ? 'Out for Delivery' : order.status}
                     </span>
                   </td>
+                  {activeTab === 'out_for_delivery' && (
+                    <td className="customer-name">{order.driver_username || 'Assigned'}</td>
+                  )}
                   <td className="actions-cell">
                     {order.status === 'pending' && (
                       <button 
@@ -119,13 +137,16 @@ export default function OrdersTab() {
                         Mark as Ready
                       </button>
                     )}
-                    {order.status === 'ready' && (
+                    {activeTab === 'out_for_delivery' && (
                       <button 
                         className="action-btn delivered-btn"
                         onClick={() => handleStatusUpdate(order.id, 'delivered')}
                       >
                         Mark as Delivered
                       </button>
+                    )}
+                    {order.status === 'ready' && !order.driver_id && (
+                      <span className="completed-text">Awaiting Assignment</span>
                     )}
                     {order.status === 'delivered' && (
                       <span className="completed-text">Completed</span>

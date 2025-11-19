@@ -6,6 +6,7 @@ export default function DeliveryRoutes() {
   const [numDrivers, setNumDrivers] = useState(1)
   const [routes, setRoutes] = useState<any[]>([])
   const [drivers, setDrivers] = useState<any[]>([])
+  const [readyOrders, setReadyOrders] = useState<any[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [showCreateDriver, setShowCreateDriver] = useState(false)
   const [newDriverUsername, setNewDriverUsername] = useState('')
@@ -13,6 +14,7 @@ export default function DeliveryRoutes() {
 
   useEffect(() => {
     fetchDrivers()
+    fetchReadyOrders()
   }, [])
 
   const fetchDrivers = async () => {
@@ -23,6 +25,19 @@ export default function DeliveryRoutes() {
       console.error('Failed to fetch drivers')
     }
   }
+
+  const fetchReadyOrders = async () => {
+    try {
+      const data = await API.fetchOrders()
+      // Only show ready orders that haven't been assigned to a driver yet
+      const ready = Array.isArray(data) ? data.filter((order: any) => order.status === 'ready' && !order.driver_id) : []
+      setReadyOrders(ready)
+    } catch (err) {
+      console.error('Failed to fetch ready orders')
+    }
+  }
+
+
 
   const handleCreateDriver = async () => {
     try {
@@ -39,12 +54,20 @@ export default function DeliveryRoutes() {
   }
 
   const handleGenerateRoutes = async () => {
+    if (readyOrders.length === 0) {
+      alert('No unassigned orders to generate routes for!')
+      return
+    }
+
     setIsGenerating(true)
     try {
-      const data = await API.generateRoutes(numDrivers)
+      // Use the readyOrders already loaded instead of fetching again
+      const orderIds = readyOrders.map(o => o.id).join(',')
+      const data = await API.generateRoutesFromOrders(readyOrders, numDrivers)
       setRoutes(data.routes || [])
     } catch (err) {
       console.error('Failed to generate routes')
+      alert('Failed to generate routes. Check console for details.')
     } finally {
       setIsGenerating(false)
     }
@@ -56,6 +79,7 @@ export default function DeliveryRoutes() {
       await API.assignRoute(driverId, orderIds, route)
       alert('Route assigned successfully!')
       setRoutes([])
+      fetchReadyOrders() // Refresh the ready orders list
     } catch (err) {
       console.error('Failed to assign route')
     }
@@ -65,9 +89,14 @@ export default function DeliveryRoutes() {
     <div className="delivery-routes-section">
       <div className="section-header">
         <h2>Delivery Route Planning</h2>
-        <button className="create-btn" onClick={() => setShowCreateDriver(!showCreateDriver)}>
-          {showCreateDriver ? 'Cancel' : 'Create Driver'}
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="create-btn" onClick={() => fetchReadyOrders()}>
+            Refresh Orders
+          </button>
+          <button className="create-btn" onClick={() => setShowCreateDriver(!showCreateDriver)}>
+            {showCreateDriver ? 'Cancel' : 'Create Driver'}
+          </button>
+        </div>
       </div>
 
       {showCreateDriver && (
@@ -93,6 +122,51 @@ export default function DeliveryRoutes() {
               Cancel
             </button>
           </div>
+        </div>
+      )}
+
+      {readyOrders.length > 0 ? (
+        <div className="ready-orders-list">
+          <h3>Orders Ready for Route Assignment</h3>
+          <div className="orders-table-container">
+            <table className="orders-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Items</th>
+                  <th>Delivery Address</th>
+                  <th>Phone</th>
+                </tr>
+              </thead>
+              <tbody>
+                {readyOrders.map((order) => (
+                  <tr key={order.id}>
+                    <td className="order-id">#{order.id}</td>
+                    <td className="customer-name">{order.first_name}</td>
+                    <td className="items-cell">
+                      <div className="order-items">
+                        {order.order_items?.map((item: any, index: number) => (
+                          <div key={index} className="order-item">
+                            <span className="item-name">{item.product_name}</span>
+                            <span className="item-qty">x{item.quantity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="address">{order.address}</td>
+                    <td className="phone">{order.phone_number}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="no-data-message">
+          <div className="no-data-icon">📦</div>
+          <h3>No Orders Ready for Assignment</h3>
+          <p>All ready orders have been assigned to drivers.</p>
         </div>
       )}
 
