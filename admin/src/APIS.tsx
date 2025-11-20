@@ -115,7 +115,7 @@ export const generateRoutes = async (numDrivers: number) => {
   return response.json()
 }
 
-export const generateRoutesFromOrders = async (orders: any[], numDrivers: number) => {
+export const generateRoutesFromOrders = async (orders: unknown[], numDrivers: number) => {
   const response = await fetch(`${BASE_URL}/delivery/generate-routes-from-orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

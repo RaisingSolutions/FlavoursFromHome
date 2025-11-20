@@ -10,10 +10,6 @@ export default function DriverView({ driverId }: DriverViewProps) {
   const [deliveries, setDeliveries] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchDeliveries()
-  }, [])
-
   const fetchDeliveries = async () => {
     try {
       const data = await API.getDriverDeliveries(driverId)
@@ -24,6 +20,10 @@ export default function DriverView({ driverId }: DriverViewProps) {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchDeliveries()
+  }, [fetchDeliveries])
 
   const handleMarkDelivered = async (orderId: number) => {
     try {

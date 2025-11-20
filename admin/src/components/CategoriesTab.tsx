@@ -8,10 +8,6 @@ export default function CategoriesTab() {
   const [editingItem, setEditingItem] = useState<any>(null)
   const [formData, setFormData] = useState({ name: '', description: '', image_url: '' })
 
-  useEffect(() => {
-    fetchCategories()
-  }, [])
-
   const fetchCategories = async () => {
     try {
       const data = await API.fetchCategories()
@@ -20,6 +16,10 @@ export default function CategoriesTab() {
       console.error('Failed to fetch categories')
     }
   }
+
+  useEffect(() => {
+    fetchCategories()
+  }, [fetchCategories])
 
   const handleCreateCategory = async () => {
     try {

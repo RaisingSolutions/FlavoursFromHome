@@ -6,10 +6,6 @@ export default function OrdersTab() {
   const [orders, setOrders] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'pending' | 'ready' | 'out_for_delivery' | 'delivered'>('pending')
 
-  useEffect(() => {
-    fetchOrders()
-  }, [])
-
   const fetchOrders = async () => {
     try {
       const data = await API.fetchOrders()
@@ -19,6 +15,10 @@ export default function OrdersTab() {
       setOrders([])
     }
   }
+
+  useEffect(() => {
+    fetchOrders()
+  }, [fetchOrders])
 
   const handleStatusUpdate = async (id: number, status: string) => {
     try {

@@ -9,11 +9,6 @@ export default function ProductsTab() {
   const [editingItem, setEditingItem] = useState<any>(null)
   const [formData, setFormData] = useState({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '' })
 
-  useEffect(() => {
-    fetchProducts()
-    fetchCategories()
-  }, [])
-
   const fetchProducts = async () => {
     try {
       const data = await API.fetchProducts()
@@ -31,6 +26,11 @@ export default function ProductsTab() {
       console.error('Failed to fetch categories')
     }
   }
+
+  useEffect(() => {
+    fetchProducts()
+    fetchCategories()
+  }, [fetchProducts, fetchCategories])
 
   const handleCreateProduct = async () => {
     try {

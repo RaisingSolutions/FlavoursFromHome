@@ -15,10 +15,16 @@ function App() {
     if (savedLoginState) {
       const parsed = JSON.parse(savedLoginState)
       if (parsed.isLoggedIn) {
-        setIsLoggedIn(parsed.isLoggedIn)
-        setIsSuperAdmin(parsed.isSuperAdmin)
-        setAdminId(parsed.adminId)
-        setUserRole(parsed.role || 'admin')
+        const loginData = {
+          isLoggedIn: parsed.isLoggedIn,
+          isSuperAdmin: parsed.isSuperAdmin,
+          adminId: parsed.adminId,
+          role: parsed.role || 'admin'
+        }
+        setIsLoggedIn(loginData.isLoggedIn)
+        setIsSuperAdmin(loginData.isSuperAdmin)
+        setAdminId(loginData.adminId)
+        setUserRole(loginData.role)
       }
     }
   }, [])

@@ -62,7 +62,6 @@ export default function DeliveryRoutes() {
     setIsGenerating(true)
     try {
       // Use the readyOrders already loaded instead of fetching again
-      const orderIds = readyOrders.map(o => o.id).join(',')
       const data = await API.generateRoutesFromOrders(readyOrders, numDrivers)
       setRoutes(data.routes || [])
     } catch (err) {
