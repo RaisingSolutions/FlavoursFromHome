@@ -18,7 +18,7 @@ export default function OrdersTab() {
 
   useEffect(() => {
     fetchOrders()
-  }, [fetchOrders])
+  }, [])
 
   const handleStatusUpdate = async (id: number, status: string) => {
     try {

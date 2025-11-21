@@ -30,7 +30,7 @@ export default function ProductsTab() {
   useEffect(() => {
     fetchProducts()
     fetchCategories()
-  }, [fetchProducts, fetchCategories])
+  }, [])
 
   const handleCreateProduct = async () => {
     try {

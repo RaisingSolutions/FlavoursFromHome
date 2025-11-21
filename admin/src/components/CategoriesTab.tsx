@@ -19,7 +19,7 @@ export default function CategoriesTab() {
 
   useEffect(() => {
     fetchCategories()
-  }, [fetchCategories])
+  }, [])
 
   const handleCreateCategory = async () => {
     try {
