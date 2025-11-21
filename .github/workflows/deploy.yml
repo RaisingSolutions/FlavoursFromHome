@@ -116,7 +116,7 @@ jobs:
           
           # Create frontend environment file
           cat > frontend/.env << EOF
-          VITE_API_BASE_URL=http://35.177.125.164/api
+          VITE_API_BASE_URL=https://flavours-from-home.co.uk/api
           EOF
           
           # Stop and remove existing frontend container
@@ -165,7 +165,7 @@ jobs:
           
           # Create admin environment file
           cat > admin/.env << EOF
-          VITE_API_BASE_URL=http://35.177.125.164/api
+          VITE_API_BASE_URL=https://flavours-from-home.co.uk/api
           EOF
           
           # Stop and remove existing admin container
