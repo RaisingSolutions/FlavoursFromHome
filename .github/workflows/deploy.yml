@@ -116,7 +116,7 @@ jobs:
           
           # Create frontend environment file
           cat > frontend/.env << EOF
-          VITE_API_BASE_URL=http://flavours-from-home.co.uk/api
+          VITE_API_BASE_URL=/api
           EOF
           
           # Stop and remove existing frontend container
@@ -165,7 +165,7 @@ jobs:
           
           # Create admin environment file
           cat > admin/.env << EOF
-          VITE_API_BASE_URL=http://flavours-from-home.co.uk/api
+          VITE_API_BASE_URL=/api
           EOF
           
           # Stop and remove existing admin container
@@ -179,11 +179,11 @@ jobs:
           sudo docker tag ffh-admin:$TIMESTAMP ffh-admin:latest
           sudo docker run -d --name ffh-admin -p 3001:80 --restart unless-stopped ffh-admin:latest
           
-          # Setup Nginx reverse proxy
+          # Setup Nginx reverse proxy with SSL
           cd ..
           sudo docker stop ffh-nginx || true
           sudo docker rm ffh-nginx || true
-          sudo docker run -d --name ffh-nginx -p 80:80 -v $(pwd)/nginx/nginx.conf:/etc/nginx/nginx.conf --link ffh-backend:backend --link ffh-frontend:frontend --link ffh-admin:admin --restart unless-stopped nginx:alpine
+          sudo docker run -d --name ffh-nginx -p 80:80 -p 443:443 -v $(pwd)/nginx/nginx.conf:/etc/nginx/nginx.conf -v /etc/letsencrypt:/etc/letsencrypt:ro --link ffh-backend:backend --link ffh-frontend:frontend --link ffh-admin:admin --restart unless-stopped nginx:alpine
           
           # Health check
           sleep 5
