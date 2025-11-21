@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { supabase } from '../utils/supabase';
+import { sendWhatsAppMessage } from '../utils/whatsapp';
 
 export const getAllOrders = async (req: Request, res: Response) => {
   try {
@@ -78,11 +79,11 @@ export const createOrder = async (req: Request, res: Response) => {
       throw orderError;
     }
 
-    // Get product prices
+    // Get product prices and names
     const productIds = items.map((item: any) => item.product_id);
     const { data: products, error: productsError } = await supabase
       .from('products')
-      .select('id, price')
+      .select('id, name, price')
       .in('id', productIds);
 
     if (productsError) throw productsError;
@@ -105,6 +106,24 @@ export const createOrder = async (req: Request, res: Response) => {
     if (itemsError) {
       console.error('Order items creation error:', itemsError);
       throw itemsError;
+    }
+
+    // Get product names for WhatsApp message
+    const itemsWithNames = items.map((item: any) => {
+      const product = products?.find(p => p.id === item.product_id);
+      return `${item.quantity}x ${product?.name || 'Product'}`;
+    }).join('\n');
+
+    // Send WhatsApp notification to customer and admin
+    const message = `✅ Order #${order.id} Confirmed!\n\nItems:\n${itemsWithNames}\n\nTotal: £${total_amount}\nPayment: ${payment_method}\n\nThank you for your order!`;
+    
+    // Send to customer
+    sendWhatsAppMessage(phone_number, message);
+    
+    // Send to admin
+    const adminPhone = process.env.ADMIN_PHONE_NUMBER;
+    if (adminPhone) {
+      sendWhatsAppMessage(adminPhone, message);
     }
 
     res.status(201).json(order);
