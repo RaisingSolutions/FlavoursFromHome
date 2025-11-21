@@ -114,8 +114,12 @@ export const createOrder = async (req: Request, res: Response) => {
       return `${item.quantity}x ${product?.name || 'Product'}`;
     }).join('\n');
 
+    // Determine order type
+    const orderType = address === 'Collection' ? '📦 Collection' : '🚚 Delivery';
+    const addressLine = address === 'Collection' ? '' : `\nAddress: ${address}`;
+
     // Send WhatsApp notification to customer and admin
-    const message = `✅ Order #${order.id} Confirmed!\n\nItems:\n${itemsWithNames}\n\nTotal: £${total_amount}\nPayment: ${payment_method}\n\nThank you for your order!`;
+    const message = `✅ Order #${order.id} Confirmed!\n\nCustomer: ${first_name}\nEmail: ${email}\nPhone: ${phone_number}\nType: ${orderType}${addressLine}\n\nItems:\n${itemsWithNames}\n\nTotal: £${total_amount}\nPayment: ${payment_method}\n\nThank you for your order!`;
     
     // Send to customer
     sendWhatsAppMessage(phone_number, message);
