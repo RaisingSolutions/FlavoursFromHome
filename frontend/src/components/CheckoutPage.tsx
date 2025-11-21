@@ -27,13 +27,21 @@ export default function CheckoutPage({
   const [email, setEmail] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [address, setAddress] = useState('')
+  const [orderType, setOrderType] = useState<'delivery' | 'collection'>('delivery')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const isDeliveryMinimumMet = totalAmount >= 20
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (orderType === 'delivery' && !isDeliveryMinimumMet) {
+      onShowToast('Delivery orders must be over £20. Please add more items or choose collection.', 'error')
+      return
+    }
+    
     setIsSubmitting(true)
 
     try {
@@ -41,7 +49,7 @@ export default function CheckoutPage({
         first_name: firstName,
         email,
         phone_number: phoneNumber,
-        address,
+        address: orderType === 'delivery' ? address : 'Collection',
         payment_method: paymentMethod.toUpperCase(),
         total_amount: totalAmount,
         items: cart.map(item => ({
@@ -59,7 +67,10 @@ export default function CheckoutPage({
       if (!response.ok) throw new Error('Failed to create order')
 
       const order = await response.json()
-      onShowToast(`Order #${order.id} placed successfully! We'll deliver to ${address}`, 'success')
+      const successMsg = orderType === 'delivery' 
+        ? `Order #${order.id} placed successfully! We'll deliver to ${address}`
+        : `Order #${order.id} placed successfully! Contact Sivaji at 07507 000525 for collection.`
+      onShowToast(successMsg, 'success')
       onOrderComplete()
     } catch (err) {
       onShowToast('Failed to place order. Please try again.', 'error')
@@ -77,7 +88,39 @@ export default function CheckoutPage({
       <div className="checkout-content">
         <form className="checkout-form" onSubmit={handleSubmit}>
           <div className="form-section">
-            <h3>Delivery Information</h3>
+            <h3>Order Type</h3>
+            <div className="payment-options">
+              <label className="payment-option">
+                <input
+                  type="radio"
+                  name="orderType"
+                  value="delivery"
+                  checked={orderType === 'delivery'}
+                  onChange={(e) => setOrderType(e.target.value as 'delivery')}
+                />
+                <span>🚚 Home Delivery (Min £20)</span>
+              </label>
+              
+              <label className="payment-option">
+                <input
+                  type="radio"
+                  name="orderType"
+                  value="collection"
+                  checked={orderType === 'collection'}
+                  onChange={(e) => setOrderType(e.target.value as 'collection')}
+                />
+                <span>📦 Collection (No minimum)</span>
+              </label>
+            </div>
+            {orderType === 'delivery' && !isDeliveryMinimumMet && (
+              <div className="error-message" style={{ marginTop: '1rem' }}>
+                Delivery requires a minimum order of £20. Current total: £{totalAmount.toFixed(2)}
+              </div>
+            )}
+          </div>
+
+          <div className="form-section">
+            <h3>Contact Information</h3>
             
             <div className="form-group">
               <label htmlFor="firstName">First Name *</label>
@@ -112,16 +155,24 @@ export default function CheckoutPage({
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="address">Delivery Address *</label>
-              <textarea
-                id="address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                rows={3}
-                required
-              />
-            </div>
+            {orderType === 'delivery' && (
+              <div className="form-group">
+                <label htmlFor="address">Delivery Address *</label>
+                <textarea
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  rows={3}
+                  required
+                />
+              </div>
+            )}
+            {orderType === 'collection' && (
+              <div className="info-card" style={{ marginTop: '1rem' }}>
+                <span className="info-icon">📍</span>
+                <p><strong>Collection Details</strong><br/>Contact Sivaji at <a href="tel:07507000525">07507 000525</a> to arrange collection</p>
+              </div>
+            )}
           </div>
 
           <div className="form-section">

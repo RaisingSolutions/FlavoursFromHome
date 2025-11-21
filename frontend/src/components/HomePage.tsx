@@ -22,6 +22,16 @@ export default function HomePage({
       <section className="hero">
         <h1>Welcome to Flavours From Home</h1>
         <p>Authentic ingredients delivered to your door</p>
+        <div className="delivery-info">
+          <div className="info-card">
+            <span className="info-icon">🚚</span>
+            <p><strong>Free Home Delivery in Leeds</strong><br/>On orders over £20</p>
+          </div>
+          <div className="info-card">
+            <span className="info-icon">📦</span>
+            <p><strong>Collection Available</strong><br/>Contact Sivaji at <a href="tel:07507000525">07507 000525</a></p>
+          </div>
+        </div>
       </section>
 
       <section className="categories">
