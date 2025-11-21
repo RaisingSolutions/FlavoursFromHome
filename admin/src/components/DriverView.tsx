@@ -23,7 +23,7 @@ export default function DriverView({ driverId }: DriverViewProps) {
 
   useEffect(() => {
     fetchDeliveries()
-  }, [fetchDeliveries])
+  }, [])
 
   const handleMarkDelivered = async (orderId: number) => {
     try {
