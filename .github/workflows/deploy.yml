@@ -58,6 +58,9 @@ jobs:
           SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ORS_API_KEY=${{ secrets.ORS_API_KEY }}
+          GREEN_API_INSTANCE_ID=${{ secrets.GREEN_API_INSTANCE_ID }}
+          GREEN_API_TOKEN=${{ secrets.GREEN_API_TOKEN }}
+          ADMIN_PHONE_NUMBER=${{ secrets.ADMIN_PHONE_NUMBER }}
           EOF
           
           # Stop and remove existing backend container
