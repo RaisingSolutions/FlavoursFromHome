@@ -28,7 +28,6 @@ export default function CheckoutPage({
   const [phoneNumber, setPhoneNumber] = useState('')
   const [address, setAddress] = useState('')
   const [orderType, setOrderType] = useState<'delivery' | 'collection'>('delivery')
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
@@ -45,36 +44,26 @@ export default function CheckoutPage({
     setIsSubmitting(true)
 
     try {
-      const orderData = {
-        first_name: firstName,
+      const customerInfo = {
+        firstName,
         email,
-        phone_number: phoneNumber,
+        phoneNumber,
         address: orderType === 'delivery' ? address : 'Collection',
-        payment_method: paymentMethod.toUpperCase(),
-        total_amount: totalAmount,
-        items: cart.map(item => ({
-          product_id: item.id,
-          quantity: item.quantity
-        }))
+        orderType
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/orders`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/payment/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
+        body: JSON.stringify({ cart, customerInfo })
       })
 
-      if (!response.ok) throw new Error('Failed to create order')
+      if (!response.ok) throw new Error('Failed to create checkout session')
 
-      const order = await response.json()
-      const successMsg = orderType === 'delivery' 
-        ? `Order #${order.id} placed successfully! We'll deliver to ${address}`
-        : `Order #${order.id} placed successfully! Contact Sivaji at 07507 000525 for collection.`
-      onShowToast(successMsg, 'success')
-      onOrderComplete()
+      const { url } = await response.json()
+      window.location.href = url
     } catch (err) {
-      onShowToast('Failed to place order. Please try again.', 'error')
-    } finally {
+      onShowToast('Failed to initiate payment. Please try again.', 'error')
       setIsSubmitting(false)
     }
   }
@@ -177,31 +166,8 @@ export default function CheckoutPage({
 
           <div className="form-section">
             <h3>Payment Method</h3>
-            <p className="payment-note">Payment will be collected upon delivery</p>
-            
-            <div className="payment-options">
-              <label className="payment-option">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="cash"
-                  checked={paymentMethod === 'cash'}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'cash')}
-                />
-                <span>💵 Cash on Delivery</span>
-              </label>
-              
-              <label className="payment-option">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="card"
-                  checked={paymentMethod === 'card'}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'card')}
-                />
-                <span>💳 Card on Delivery</span>
-              </label>
-            </div>
+            <p className="payment-note">💳 Secure online payment via Stripe</p>
+            <p className="payment-note" style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>You will be redirected to complete your payment securely</p>
           </div>
 
           <div className="order-summary-checkout">
@@ -227,7 +193,7 @@ export default function CheckoutPage({
               Back to Cart
             </button>
             <button type="submit" className="btn-primary" disabled={isSubmitting}>
-              {isSubmitting ? 'Placing Order...' : 'Place Order'}
+              {isSubmitting ? 'Redirecting...' : 'Proceed to Payment'}
             </button>
           </div>
         </form>
