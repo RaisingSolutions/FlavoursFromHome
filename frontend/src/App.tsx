@@ -162,14 +162,6 @@ function App() {
             cart={cart}
             cartCount={cartCount}
             onBackToCart={() => setCurrentPage('cart')}
-            onOrderComplete={() => {
-              setCart([])
-              setCartCount(0)
-              localStorage.removeItem('cart')
-              localStorage.removeItem('cartTimestamp')
-              localStorage.removeItem('currentPage')
-              setCurrentPage('home')
-            }}
             onShowToast={(message, type) => setToast({ message, type })}
           />
         ) : currentPage === 'cart' ? (

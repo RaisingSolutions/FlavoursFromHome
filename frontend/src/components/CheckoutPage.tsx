@@ -12,7 +12,6 @@ interface CheckoutPageProps {
   cart: CartItem[]
   cartCount: number
   onBackToCart: () => void
-  onOrderComplete: () => void
   onShowToast: (message: string, type: 'success' | 'error') => void
 }
 
@@ -20,7 +19,6 @@ export default function CheckoutPage({
   cart, 
   cartCount, 
   onBackToCart,
-  onOrderComplete,
   onShowToast
 }: CheckoutPageProps) {
   const [firstName, setFirstName] = useState('')
