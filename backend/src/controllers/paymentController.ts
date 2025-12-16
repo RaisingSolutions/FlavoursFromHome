@@ -21,6 +21,13 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
       quantity: item.quantity,
     }));
 
+    const cartData = cart.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity
+    }));
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
@@ -28,8 +35,12 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
       success_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/?canceled=true`,
       metadata: {
-        customerInfo: JSON.stringify(customerInfo),
-        cart: JSON.stringify(cart),
+        firstName: customerInfo.firstName,
+        email: customerInfo.email,
+        phoneNumber: customerInfo.phoneNumber,
+        address: customerInfo.address,
+        orderType: customerInfo.orderType,
+        cartData: JSON.stringify(cartData),
       },
     });
 
@@ -53,18 +64,21 @@ export const handleWebhook = async (req: Request, res: Response) => {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
       
-      const customerInfo = JSON.parse(session.metadata!.customerInfo);
-      const cart = JSON.parse(session.metadata!.cart);
+      const firstName = session.metadata!.firstName;
+      const email = session.metadata!.email;
+      const phoneNumber = session.metadata!.phoneNumber;
+      const address = session.metadata!.address;
+      const cart = JSON.parse(session.metadata!.cartData);
 
       const totalAmount = session.amount_total! / 100;
 
       const { data: order, error } = await supabase
         .from('orders')
         .insert({
-          first_name: customerInfo.firstName,
-          email: customerInfo.email,
-          phone_number: customerInfo.phoneNumber,
-          address: customerInfo.address,
+          first_name: firstName,
+          email: email,
+          phone_number: phoneNumber,
+          address: address,
           payment_method: 'ONLINE',
           payment_status: 'PAID',
           total_amount: totalAmount,
@@ -86,12 +100,12 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
       // Send WhatsApp notifications
       const itemsList = cart.map((item: any) => `${item.quantity}x ${item.name}`).join('\n');
-      const orderType = customerInfo.address === 'Collection' ? '📦 Collection' : '🚚 Delivery';
-      const addressLine = customerInfo.address === 'Collection' ? '' : `\nAddress: ${customerInfo.address}`;
+      const orderType = address === 'Collection' ? '📦 Collection' : '🚚 Delivery';
+      const addressLine = address === 'Collection' ? '' : `\nAddress: ${address}`;
       
-      const message = `✅ Order #${order.id} Confirmed!\n\nCustomer: ${customerInfo.firstName}\nEmail: ${customerInfo.email}\nPhone: ${customerInfo.phoneNumber}\nType: ${orderType}${addressLine}\n\nItems:\n${itemsList}\n\nTotal: £${totalAmount.toFixed(2)}\nPayment: PAID (Online)\n\nThank you for your order!`;
+      const message = `✅ Order #${order.id} Confirmed!\n\nCustomer: ${firstName}\nEmail: ${email}\nPhone: ${phoneNumber}\nType: ${orderType}${addressLine}\n\nItems:\n${itemsList}\n\nTotal: £${totalAmount.toFixed(2)}\nPayment: PAID (Online)\n\nThank you for your order!`;
       
-      sendWhatsAppMessage(customerInfo.phoneNumber, message);
+      sendWhatsAppMessage(phoneNumber, message);
       
       const adminPhone = process.env.ADMIN_PHONE_NUMBER;
       if (adminPhone) {
