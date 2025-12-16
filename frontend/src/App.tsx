@@ -4,6 +4,7 @@ import * as API from './API'
 import HomePage from './components/HomePage'
 import CartPage from './components/CartPage'
 import CheckoutPage from './components/CheckoutPage'
+import SuccessPage from './components/SuccessPage'
 import Toast from './components/Toast'
 
 interface CartItem {
@@ -38,9 +39,11 @@ function App() {
     return []
   })
   const [cartCount, setCartCount] = useState(0)
-  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout'>(() => {
+  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout' | 'success'>(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('success') === 'true') return 'success'
     const saved = localStorage.getItem('currentPage')
-    return (saved as 'home' | 'cart' | 'checkout') || 'home'
+    return (saved as 'home' | 'cart' | 'checkout' | 'success') || 'home'
   })
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
@@ -146,7 +149,15 @@ function App() {
       </nav>
       
       <main className="main-content">
-        {currentPage === 'checkout' ? (
+        {currentPage === 'success' ? (
+          <SuccessPage 
+            onContinueShopping={() => {
+              setCart([])
+              setCartCount(0)
+              setCurrentPage('home')
+            }}
+          />
+        ) : currentPage === 'checkout' ? (
           <CheckoutPage 
             cart={cart}
             cartCount={cartCount}

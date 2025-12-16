@@ -61,6 +61,8 @@ jobs:
           GREEN_API_INSTANCE_ID=${{ secrets.GREEN_API_INSTANCE_ID }}
           GREEN_API_TOKEN=${{ secrets.GREEN_API_TOKEN }}
           ADMIN_PHONE_NUMBER=${{ secrets.ADMIN_PHONE_NUMBER }}
+          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
           EOF
           
           # Stop and remove existing backend container
@@ -117,6 +119,7 @@ jobs:
           # Create frontend environment file
           cat > frontend/.env << EOF
           VITE_API_BASE_URL=/api
+          VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
           EOF
           
           # Stop and remove existing frontend container
