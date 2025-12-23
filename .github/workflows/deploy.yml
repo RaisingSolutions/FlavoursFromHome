@@ -54,6 +54,7 @@ jobs:
           PORT=5000
           NODE_ENV=production
           CORS_ORIGIN=*
+          FRONTEND_URL=https://flavours-from-home.co.uk
           SUPABASE_URL=${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
