@@ -20,7 +20,7 @@ export default function HomePage({
   return (
     <>
       <section className="hero">
-        <h1>Welcome to Flavours From Home</h1>
+        <h1>WELCOME TO FLAVOURS FROM HOME</h1>
         <p>Authentic ingredients delivered to your door</p>
         <div className="delivery-info">
           <div className="info-card">
