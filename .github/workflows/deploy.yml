@@ -64,7 +64,8 @@ jobs:
           ADMIN_PHONE_NUMBER=${{ secrets.ADMIN_PHONE_NUMBER }}
           STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+          EMAIL_USER=${{ secrets.EMAIL_USER }}
+          EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}
           EOF
           
           # Stop and remove existing backend container

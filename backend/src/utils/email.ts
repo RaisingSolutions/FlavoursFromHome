@@ -1,6 +1,14 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: 'smtp.hostinger.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
 
 export const sendOrderConfirmationEmail = async (
   to: string,
@@ -18,9 +26,9 @@ export const sendOrderConfirmationEmail = async (
     
     const addressLine = orderType === 'delivery' ? `<p><strong>Delivery Address:</strong> ${address}</p>` : '<p><strong>Collection:</strong> Contact Sivaji at 07507 000525</p>';
     
-    await resend.emails.send({
-      from: 'Flavours From Home <orders@flavours-from-home.co.uk>',
-      to: [to],
+    await transporter.sendMail({
+      from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
+      to: to,
       subject: `Order #${orderId} Confirmed - Flavours From Home`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
