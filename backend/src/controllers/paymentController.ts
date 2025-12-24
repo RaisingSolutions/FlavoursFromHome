@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Stripe from 'stripe';
 import { supabase } from '../utils/supabase';
 import { sendWhatsAppMessage } from '../utils/whatsapp';
+import { sendOrderConfirmationEmail } from '../utils/email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-11-17.clover' });
 
@@ -129,6 +130,17 @@ export const handleWebhook = async (req: Request, res: Response) => {
         console.log('Sending WhatsApp to admin:', adminPhone);
         sendWhatsAppMessage(adminPhone, message);
       }
+
+      // Send email confirmation
+      console.log('Sending email to:', email);
+      await sendOrderConfirmationEmail(email, {
+        orderId: order.id,
+        firstName,
+        items: itemsList,
+        total: totalAmount,
+        address,
+        orderType: address === 'Collection' ? 'collection' : 'delivery',
+      });
     }
 
     res.json({ received: true });
