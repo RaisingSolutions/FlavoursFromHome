@@ -54,6 +54,8 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
 export const handleWebhook = async (req: Request, res: Response) => {
   const sig = req.headers['stripe-signature'] as string;
 
+  console.log('Webhook received:', { sig, hasBody: !!req.body });
+
   try {
     const event = stripe.webhooks.constructEvent(
       req.body,
@@ -61,8 +63,13 @@ export const handleWebhook = async (req: Request, res: Response) => {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
 
+    console.log('Webhook event type:', event.type);
+
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
+      
+      console.log('Processing payment for session:', session.id);
+      console.log('Metadata:', session.metadata);
       
       const firstName = session.metadata!.firstName;
       const email = session.metadata!.email;
@@ -71,6 +78,8 @@ export const handleWebhook = async (req: Request, res: Response) => {
       const cart = JSON.parse(session.metadata!.cartData);
 
       const totalAmount = session.amount_total! / 100;
+
+      console.log('Creating order for:', firstName, email);
 
       const { data: order, error } = await supabase
         .from('orders')
@@ -87,7 +96,12 @@ export const handleWebhook = async (req: Request, res: Response) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Order creation error:', error);
+        throw error;
+      }
+
+      console.log('Order created:', order.id);
 
       const orderItems = cart.map((item: any) => ({
         order_id: order.id,
@@ -98,6 +112,8 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
       await supabase.from('order_items').insert(orderItems);
 
+      console.log('Order items created');
+
       // Send WhatsApp notifications
       const itemsList = cart.map((item: any) => `${item.quantity}x ${item.name}`).join('\n');
       const orderType = address === 'Collection' ? '📦 Collection' : '🚚 Delivery';
@@ -105,10 +121,12 @@ export const handleWebhook = async (req: Request, res: Response) => {
       
       const message = `✅ Order #${order.id} Confirmed!\n\nCustomer: ${firstName}\nEmail: ${email}\nPhone: ${phoneNumber}\nType: ${orderType}${addressLine}\n\nItems:\n${itemsList}\n\nTotal: £${totalAmount.toFixed(2)}\nPayment: PAID (Online)\n\nThank you for your order!`;
       
+      console.log('Sending WhatsApp to:', phoneNumber);
       sendWhatsAppMessage(phoneNumber, message);
       
       const adminPhone = process.env.ADMIN_PHONE_NUMBER;
       if (adminPhone) {
+        console.log('Sending WhatsApp to admin:', adminPhone);
         sendWhatsAppMessage(adminPhone, message);
       }
     }
