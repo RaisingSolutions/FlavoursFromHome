@@ -27,6 +27,25 @@ services:
       - "3001:80"
     restart: unless-stopped
 
+  halfway-backend:
+    build: ./halfway/backend
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=production
+      - PORT=5001
+      - CORS_ORIGIN=*
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    restart: unless-stopped
+
+  halfway-frontend:
+    build: ./halfway/frontend
+    ports:
+      - "3002:80"
+    restart: unless-stopped
+
   nginx:
     image: nginx:alpine
     ports:
@@ -37,4 +56,6 @@ services:
       - backend
       - frontend
       - admin
+      - halfway-backend
+      - halfway-frontend
     restart: unless-stopped
