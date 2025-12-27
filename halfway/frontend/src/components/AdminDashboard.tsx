@@ -13,7 +13,6 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   const [shifts, setShifts] = useState<any[]>([]);
   const [showAddUser, setShowAddUser] = useState(false);
   const [showUserList, setShowUserList] = useState(false);
-  const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetchShifts();
@@ -31,103 +30,45 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
   const calculateHours = (start: string, end: string) => {
     const diff = new Date(end).getTime() - new Date(start).getTime();
-    return (diff / (1000 * 60 * 60)).toFixed(2);
+    return (diff / (1000 * 60 * 60));
   };
 
   const buildShiftTable = () => {
-    const shiftsByDate: any = {};
+    const dates: string[] = [];
+    const dateLabels: string[] = [];
+    const userShifts: any = {};
+    const dailyTotals: any = {};
+    const userTotals: any = {};
     
     shifts.forEach(shift => {
       const date = new Date(shift.start_time);
       const dateKey = date.toLocaleDateString('en-GB');
+      const dayLabel = date.toLocaleDateString('en-GB', { weekday: 'short' });
+      const fullLabel = `${dayLabel} (${dateKey})`;
       const userName = shift.halfway_users.name;
+      const hours = calculateHours(shift.start_time, shift.end_time);
       const startTime = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
       const endTime = new Date(shift.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
       
-      if (!shiftsByDate[dateKey]) shiftsByDate[dateKey] = { date, shifts: [] };
-      shiftsByDate[dateKey].shifts.push({ userName, time: `${startTime}-${endTime}` });
+      if (!dates.includes(dateKey)) {
+        dates.push(dateKey);
+        dateLabels.push(fullLabel);
+        dailyTotals[dateKey] = 0;
+      }
+      
+      if (!userShifts[userName]) userShifts[userName] = {};
+      if (!userShifts[userName][dateKey]) userShifts[userName][dateKey] = { times: [], totalHours: 0 };
+      userShifts[userName][dateKey].times.push(`${startTime}-${endTime}`);
+      userShifts[userName][dateKey].totalHours += hours;
+      dailyTotals[dateKey] += hours;
+      userTotals[userName] = (userTotals[userName] || 0) + hours;
     });
     
-    if (tab === 'month') {
-      const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      
-      const weeks: any[][] = [];
-      let currentWeek: any[] = [];
-      
-      for (let i = 0; i < firstDay.getDay(); i++) currentWeek.push(null);
-      
-      for (let day = 1; day <= lastDay.getDate(); day++) {
-        const date = new Date(now.getFullYear(), now.getMonth(), day);
-        const dateKey = date.toLocaleDateString('en-GB');
-        currentWeek.push(shiftsByDate[dateKey] ? { dateKey, date, shifts: shiftsByDate[dateKey].shifts } : { date, shifts: [] });
-        
-        if (currentWeek.length === 7) {
-          weeks.push(currentWeek);
-          currentWeek = [];
-        }
-      }
-      
-      if (currentWeek.length > 0) {
-        while (currentWeek.length < 7) currentWeek.push(null);
-        weeks.push(currentWeek);
-      }
-      
-      return weeks;
-    } else {
-      const sortedDates = Object.keys(shiftsByDate).sort((a, b) => {
-        const [dayA, monthA, yearA] = a.split('/');
-        const [dayB, monthB, yearB] = b.split('/');
-        return new Date(`${yearA}-${monthA}-${dayA}`).getTime() - new Date(`${yearB}-${monthB}-${dayB}`).getTime();
-      });
-      
-      const weeks: any[][] = [];
-      let currentWeek: any[] = [];
-      
-      if (sortedDates.length > 0) {
-        const firstDate = shiftsByDate[sortedDates[0]].date;
-        const startDay = firstDate.getDay();
-        for (let i = 0; i < startDay; i++) currentWeek.push(null);
-      }
-      
-      sortedDates.forEach(dateKey => {
-        const dateData = shiftsByDate[dateKey];
-        currentWeek.push({ dateKey, ...dateData });
-        
-        if (currentWeek.length === 7) {
-          weeks.push(currentWeek);
-          currentWeek = [];
-        }
-      });
-      
-      if (currentWeek.length > 0) {
-        while (currentWeek.length < 7) currentWeek.push(null);
-        weeks.push(currentWeek);
-      }
-      
-      return weeks;
-    }
+    return { dates, dateLabels, userShifts, dailyTotals, userTotals };
   };
 
-  const weeks = buildShiftTable();
-  
-  const toggleWeek = (weekIdx: number) => {
-    const newExpanded = new Set(expandedWeeks);
-    if (newExpanded.has(weekIdx)) {
-      newExpanded.delete(weekIdx);
-    } else {
-      newExpanded.add(weekIdx);
-    }
-    setExpandedWeeks(newExpanded);
-  };
-  
-  const getWeekLabel = (week: any[]) => {
-    const firstDay = week.find(d => d)?.date;
-    const lastDay = [...week].reverse().find(d => d)?.date;
-    if (!firstDay || !lastDay) return 'Empty Week';
-    return `${firstDay.getDate()}/${firstDay.getMonth() + 1} - ${lastDay.getDate()}/${lastDay.getMonth() + 1}`;
-  };
+  const { dates, dateLabels, userShifts, dailyTotals, userTotals } = buildShiftTable();
+  const userNames = Object.keys(userShifts);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
@@ -181,103 +122,58 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
           {tab === 'week' ? 'Weekly' : 'Monthly'} Shift Schedule
         </h2>
 
-        {weeks.length > 0 ? (
-          tab === 'week' ? (
-            <div>
-              {weeks.map((week, weekIdx) => (
-                <div key={weekIdx} style={{ marginBottom: '15px', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div 
-                    onClick={() => toggleWeek(weekIdx)}
-                    style={{ 
-                      padding: '15px', 
-                      background: '#34495e', 
-                      color: 'white', 
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <span style={{ fontWeight: '600' }}>Week {weekIdx + 1}: {getWeekLabel(week)}</span>
-                    <span>{expandedWeeks.has(weekIdx) ? '▼' : '▶'}</span>
-                  </div>
-                  {expandedWeeks.has(weekIdx) && (
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'clamp(11px, 1.5vw, 14px)' }}>
-                        <thead>
-                          <tr style={{ background: '#ecf0f1' }}>
-                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                              <th key={day} style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd', width: '14.28%' }}>
-                                {day}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            {week.map((day, dayIdx) => (
-                              <td key={dayIdx} style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'top', height: '100px', background: day ? 'white' : '#f9f9f9' }}>
-                                {day && (
-                                  <>
-                                    <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#2c3e50' }}>
-                                      {day.date.getDate()}
-                                    </div>
-                                    {day.shifts.map((shift: any, idx: number) => (
-                                      <div key={idx} style={{ fontSize: '11px', background: '#d5f4e6', padding: '4px', marginBottom: '4px', borderRadius: '3px' }}>
-                                        <div style={{ fontWeight: '600' }}>{shift.userName}</div>
-                                        <div style={{ color: '#555' }}>{shift.time}</div>
-                                      </div>
-                                    ))}
-                                  </>
-                                )}
-                              </td>
-                            ))}
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'clamp(11px, 1.5vw, 14px)' }}>
-                <thead>
-                  <tr style={{ background: '#34495e', color: 'white' }}>
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                      <th key={day} style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd', width: '14.28%' }}>
-                        {day}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {weeks.map((week, weekIdx) => (
-                    <tr key={weekIdx}>
-                      {week.map((day, dayIdx) => (
-                        <td key={dayIdx} style={{ padding: '8px', border: '1px solid #ddd', verticalAlign: 'top', height: '100px', background: day ? 'white' : '#f9f9f9' }}>
-                          {day && (
-                            <>
-                              <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#2c3e50' }}>
-                                {day.date.getDate()}
-                              </div>
-                              {day.shifts.map((shift: any, idx: number) => (
-                                <div key={idx} style={{ fontSize: '11px', background: '#d5f4e6', padding: '4px', marginBottom: '4px', borderRadius: '3px' }}>
-                                  <div style={{ fontWeight: '600' }}>{shift.userName}</div>
-                                  <div style={{ color: '#555' }}>{shift.time}</div>
-                                </div>
-                              ))}
-                            </>
-                          )}
-                        </td>
-                      ))}
-                    </tr>
+        {dates.length > 0 ? (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', background: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+              <thead>
+                <tr style={{ background: '#34495e', color: 'white' }}>
+                  <th style={{ padding: '15px', textAlign: 'left', border: '1px solid #ddd', position: 'sticky', left: 0, background: '#34495e', zIndex: 10 }}>Date</th>
+                  {userNames.map(userName => (
+                    <th key={userName} style={{ padding: '15px', textAlign: 'center', border: '1px solid #ddd', minWidth: '120px' }}>
+                      <div>{userName}</div>
+                      <div style={{ fontSize: '12px', fontWeight: 'normal', marginTop: '4px', opacity: 0.9 }}>({userTotals[userName].toFixed(1)}h)</div>
+                    </th>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )
+                  <th style={{ padding: '15px', textAlign: 'center', border: '1px solid #ddd', background: '#3498db', minWidth: '120px' }}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dates.map((date, idx) => (
+                  <tr key={date}>
+                    <td style={{ padding: '15px', border: '1px solid #ddd', fontWeight: '600', background: '#ecf0f1', position: 'sticky', left: 0, zIndex: 5 }}>
+                      {dateLabels[idx]}
+                    </td>
+                    {userNames.map(userName => (
+                      <td key={userName} style={{ padding: '15px', border: '1px solid #ddd', textAlign: 'center', background: userShifts[userName][date] ? '#d5f4e6' : 'white' }}>
+                        {userShifts[userName][date] ? (
+                          <div>
+                            <div style={{ fontSize: '12px', color: '#555', marginBottom: '4px' }}>
+                              {userShifts[userName][date].times.join(', ')}
+                            </div>
+                            <div style={{ fontWeight: 'bold' }}>{userShifts[userName][date].totalHours.toFixed(1)}h</div>
+                          </div>
+                        ) : '-'}
+                      </td>
+                    ))}
+                    <td style={{ padding: '15px', border: '1px solid #ddd', textAlign: 'center', fontWeight: 'bold', background: '#e3f2fd' }}>
+                      {dailyTotals[date].toFixed(1)}h
+                    </td>
+                  </tr>
+                ))}
+                <tr style={{ background: '#3498db', color: 'white', fontWeight: 'bold' }}>
+                  <td style={{ padding: '15px', border: '1px solid #ddd', position: 'sticky', left: 0, background: '#3498db', zIndex: 5 }}>Total</td>
+                  {userNames.map(userName => (
+                    <td key={userName} style={{ padding: '15px', border: '1px solid #ddd', textAlign: 'center' }}>
+                      {userTotals[userName].toFixed(1)}h
+                    </td>
+                  ))}
+                  <td style={{ padding: '15px', border: '1px solid #ddd', textAlign: 'center' }}>
+                    {Object.values(dailyTotals).reduce((sum: number, val: any) => sum + val, 0).toFixed(1)}h
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div style={{ 
             background: 'white', 
