@@ -35,6 +35,21 @@ export default function DriverView({ driverId }: DriverViewProps) {
     }
   }
 
+  const startLocation = '85 High Ash Drive, LS17 8RX';
+  
+  const openFullRoute = (app: 'google' | 'waze') => {
+    const waypoints = deliveries.map(d => encodeURIComponent(d.address)).join('/');
+    
+    if (app === 'google') {
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(startLocation)}&destination=${encodeURIComponent(deliveries[deliveries.length - 1].address)}&waypoints=${waypoints}`;
+      window.open(url, '_blank');
+    } else {
+      // Waze doesn't support multi-stop, so open first destination
+      const url = `https://waze.com/ul?q=${encodeURIComponent(deliveries[0].address)}&navigate=yes`;
+      window.open(url, '_blank');
+    }
+  };
+
   if (loading) {
     return <div className="driver-view">Loading...</div>
   }
@@ -55,54 +70,57 @@ export default function DriverView({ driverId }: DriverViewProps) {
     <div className="driver-view">
       <div className="section-header">
         <h2>My Deliveries</h2>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            onClick={() => openFullRoute('google')}
+            style={{ padding: '12px 24px', background: '#4285f4', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            📍 Open Route in Google Maps
+          </button>
+          <button 
+            onClick={() => openFullRoute('waze')}
+            style={{ padding: '12px 24px', background: '#33ccff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            🚗 Open Route in Waze
+          </button>
+        </div>
       </div>
 
-      <div className="delivery-list">
-        {deliveries.map((order, index) => (
-          <div key={order.id} className="delivery-card">
-            <div className="delivery-header">
-              <h3>Stop #{index + 1} - Order #{order.id}</h3>
-              <span className={`status-badge status-${order.status}`}>
-                {order.status}
-              </span>
-            </div>
-            <div className="delivery-details">
-              <p><strong>Customer:</strong> {order.first_name}</p>
-              <p><strong>Address:</strong> {order.address}</p>
-              <p><strong>Phone:</strong> {order.phone_number}</p>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-              <a 
-                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ flex: 1, padding: '12px', background: '#4285f4', color: 'white', textAlign: 'center', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}
-              >
-                📍 Open in Google Maps
-              </a>
-              <a 
-                href={`https://waze.com/ul?q=${encodeURIComponent(order.address)}&navigate=yes`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ flex: 1, padding: '12px', background: '#33ccff', color: 'white', textAlign: 'center', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}
-              >
-                🚗 Open in Waze
-              </a>
-            </div>
-            {order.status === 'ready' && (
-              <button 
-                className="action-btn delivered-btn"
-                onClick={() => handleMarkDelivered(order.id)}
-                style={{ marginTop: '10px', width: '100%' }}
-              >
-                Mark as Delivered
-              </button>
-            )}
-            {order.status === 'delivered' && (
-              <span className="completed-text">✓ Delivered</span>
-            )}
-          </div>
-        ))}
+      <div style={{ overflowX: 'auto', marginTop: '20px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+          <thead>
+            <tr style={{ background: '#34495e', color: 'white' }}>
+              <th style={{ padding: '15px', textAlign: 'left', border: '1px solid #ddd' }}>Stop #</th>
+              <th style={{ padding: '15px', textAlign: 'left', border: '1px solid #ddd' }}>Address</th>
+              <th style={{ padding: '15px', textAlign: 'left', border: '1px solid #ddd' }}>Contact</th>
+              <th style={{ padding: '15px', textAlign: 'center', border: '1px solid #ddd' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {deliveries.map((order, index) => (
+              <tr key={order.id} style={{ background: order.status === 'delivered' ? '#e8f5e9' : 'white' }}>
+                <td style={{ padding: '15px', border: '1px solid #ddd', fontWeight: 'bold' }}>#{index + 1}</td>
+                <td style={{ padding: '15px', border: '1px solid #ddd' }}>{order.address}</td>
+                <td style={{ padding: '15px', border: '1px solid #ddd' }}>
+                  <div><strong>{order.first_name}</strong></div>
+                  <div style={{ fontSize: '14px', color: '#666' }}>{order.phone_number}</div>
+                </td>
+                <td style={{ padding: '15px', border: '1px solid #ddd', textAlign: 'center' }}>
+                  {order.status === 'ready' ? (
+                    <button 
+                      onClick={() => handleMarkDelivered(order.id)}
+                      style={{ padding: '10px 20px', background: '#4caf50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                    >
+                      ✓ Mark as Delivered
+                    </button>
+                  ) : (
+                    <span style={{ color: '#4caf50', fontWeight: 'bold' }}>✓ Delivered</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   )
