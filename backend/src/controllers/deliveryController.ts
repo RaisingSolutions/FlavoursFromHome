@@ -290,6 +290,14 @@ export const getDriverDeliveries = async (req: Request, res: Response) => {
   try {
     const driverId = req.headers['driver-id'];
 
+    // Get the driver's route
+    const { data: route, error: routeError } = await supabase
+      .from('delivery_routes')
+      .select('route_data')
+      .eq('driver_id', driverId)
+      .eq('status', 'assigned')
+      .single();
+
     const { data: orders, error } = await supabase
       .from('orders')
       .select('id, first_name, address, phone_number, status, route_id')
@@ -297,6 +305,12 @@ export const getDriverDeliveries = async (req: Request, res: Response) => {
       .in('status', ['ready', 'delivered']);
 
     if (error) throw error;
+
+    // Sort orders based on route_data order if available
+    if (route && route.route_data && route.route_data.orders) {
+      const orderSequence = route.route_data.orders.map((o: any) => o.id);
+      orders?.sort((a, b) => orderSequence.indexOf(a.id) - orderSequence.indexOf(b.id));
+    }
 
     res.json(orders);
   } catch (error) {

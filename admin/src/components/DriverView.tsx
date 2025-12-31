@@ -58,10 +58,10 @@ export default function DriverView({ driverId }: DriverViewProps) {
       </div>
 
       <div className="delivery-list">
-        {deliveries.map((order) => (
+        {deliveries.map((order, index) => (
           <div key={order.id} className="delivery-card">
             <div className="delivery-header">
-              <h3>Order #{order.id}</h3>
+              <h3>Stop #{index + 1} - Order #{order.id}</h3>
               <span className={`status-badge status-${order.status}`}>
                 {order.status}
               </span>
@@ -71,10 +71,29 @@ export default function DriverView({ driverId }: DriverViewProps) {
               <p><strong>Address:</strong> {order.address}</p>
               <p><strong>Phone:</strong> {order.phone_number}</p>
             </div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+              <a 
+                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ flex: 1, padding: '12px', background: '#4285f4', color: 'white', textAlign: 'center', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}
+              >
+                📍 Open in Google Maps
+              </a>
+              <a 
+                href={`https://waze.com/ul?q=${encodeURIComponent(order.address)}&navigate=yes`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ flex: 1, padding: '12px', background: '#33ccff', color: 'white', textAlign: 'center', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}
+              >
+                🚗 Open in Waze
+              </a>
+            </div>
             {order.status === 'ready' && (
               <button 
                 className="action-btn delivered-btn"
                 onClick={() => handleMarkDelivered(order.id)}
+                style={{ marginTop: '10px', width: '100%' }}
               >
                 Mark as Delivered
               </button>
