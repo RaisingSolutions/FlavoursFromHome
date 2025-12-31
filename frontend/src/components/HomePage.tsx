@@ -57,8 +57,24 @@ export default function HomePage({
 
       <section className="products">
         <h2>Our Products</h2>
-        <div className="products-grid">
-          {products.map((product: any) => (
+        {products.length === 0 ? (
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderRadius: '16px',
+            color: 'white',
+            margin: '40px auto',
+            maxWidth: '600px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ fontSize: '64px', marginBottom: '20px' }}>👨‍🍳</div>
+            <h2 style={{ fontSize: '28px', marginBottom: '16px', fontWeight: 'bold', color: 'white' }}>Good food takes time!</h2>
+            <p style={{ fontSize: '18px', lineHeight: '1.6', opacity: 0.95, color: 'white' }}>Our fresh meals are on the way—shop our other products for now.</p>
+          </div>
+        ) : (
+          <div className="products-grid">
+            {products.map((product: any) => (
             <div key={product.id} className="product-card">
               <div className="product-image">
                 {product.image_url ? (
@@ -105,7 +121,8 @@ export default function HomePage({
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
       </section>
     </>
   )
