@@ -71,6 +71,7 @@ export const generateRoutes = async (req: Request, res: Response) => {
             })),
             vehicles: [{
               id: 1,
+              profile: 'driving-car',
               start: [STORE_LOCATION.lng, STORE_LOCATION.lat],
               end: [STORE_LOCATION.lng, STORE_LOCATION.lat]
             }]
@@ -188,6 +189,7 @@ export const generateRoutesFromOrders = async (req: Request, res: Response) => {
             })),
             vehicles: [{
               id: 1,
+              profile: 'driving-car',
               start: [STORE_LOCATION.lng, STORE_LOCATION.lat],
               end: [STORE_LOCATION.lng, STORE_LOCATION.lat]
             }]

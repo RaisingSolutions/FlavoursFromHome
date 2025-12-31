@@ -224,6 +224,14 @@ export default function DeliveryRoutes() {
                   {route.duration && <span>⏱️ {Math.round(route.duration / 60)} min</span>}
                 </div>
 
+                <div style={{ background: '#fff3cd', padding: '15px', borderRadius: '8px', marginTop: '15px', border: '2px solid #ffc107' }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#856404' }}>💰 Driver Payment</h4>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                    <div>Total Miles: {route.distance ? (route.distance / 1609.34).toFixed(2) : 'N/A'}</div>
+                    <div style={{ marginTop: '5px' }}>Total Time: {route.duration ? Math.round(route.duration / 60) : 'N/A'} minutes</div>
+                  </div>
+                </div>
+
                 <div className="route-orders">
                   <h4>Delivery Order:</h4>
                   <ol>
