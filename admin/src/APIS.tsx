@@ -65,6 +65,14 @@ export const updateOrderStatus = async (id: number, status: string) => {
   return response.ok
 }
 
+export const cancelOrder = async (id: number) => {
+  const response = await fetch(`${BASE_URL}/orders/${id}/cancel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })
+  return response.ok
+}
+
 // Category APIs
 export const fetchCategories = async () => {
   const response = await fetch(`${BASE_URL}/categories`)

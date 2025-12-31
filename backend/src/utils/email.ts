@@ -63,3 +63,46 @@ export const sendOrderConfirmationEmail = async (
     console.error('Email send error:', error);
   }
 };
+
+export const sendOrderCancellationEmail = async (
+  to: string,
+  orderDetails: {
+    orderId: number;
+    firstName: string;
+    totalAmount: number;
+  }
+) => {
+  try {
+    const { orderId, firstName, totalAmount } = orderDetails;
+    
+    await transporter.sendMail({
+      from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
+      to: to,
+      subject: `Order #${orderId} Cancelled - Flavours From Home`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #d32f2f;">❌ Order Cancelled</h1>
+          <p>Hi ${firstName},</p>
+          <p>Your order #${orderId} has been cancelled.</p>
+          
+          <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+            <h3 style="margin-top: 0; color: #856404;">Refund Information</h3>
+            <p>A full refund of <strong>£${totalAmount.toFixed(2)}</strong> has been initiated.</p>
+            <p>The refund will appear in your account within 5-10 business days.</p>
+          </div>
+          
+          <p>If you have any questions or concerns, please don't hesitate to contact us.</p>
+          
+          <p style="margin-top: 30px;">
+            Best regards,<br>
+            <strong>Flavours From Home Team</strong>
+          </p>
+        </div>
+      `,
+    });
+    
+    console.log('Order cancellation email sent to:', to);
+  } catch (error) {
+    console.error('Email send error:', error);
+  }
+};

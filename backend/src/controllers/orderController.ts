@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { supabase } from '../utils/supabase';
 import { sendWhatsAppMessage } from '../utils/whatsapp';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-11-17.clover' });
 
 export const getAllOrders = async (req: Request, res: Response) => {
   try {
@@ -154,5 +157,60 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     res.json(data);
   } catch (error) {
     res.status(400).json({ error: 'Failed to update order status' });
+  }
+};
+
+export const cancelOrder = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Get order details
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('*, order_items(quantity, product_id, products(name))')
+      .eq('id', id)
+      .single();
+
+    if (orderError) throw orderError;
+
+    // Only refund if payment was online and has stripe session
+    if (order.payment_method === 'ONLINE' && order.stripe_session_id) {
+      // Get payment intent from session
+      const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
+      
+      if (session.payment_intent) {
+        // Create refund
+        await stripe.refunds.create({
+          payment_intent: session.payment_intent as string,
+        });
+      }
+    }
+
+    // Restore inventory
+    for (const item of order.order_items) {
+      await supabase.rpc('increment_inventory', {
+        product_id: item.product_id,
+        amount: item.quantity
+      });
+    }
+
+    // Update order status to cancelled
+    await supabase
+      .from('orders')
+      .update({ status: 'cancelled' })
+      .eq('id', id);
+
+    // Send cancellation email to customer
+    const { sendOrderCancellationEmail } = await import('../utils/email');
+    await sendOrderCancellationEmail(order.email, {
+      orderId: order.id,
+      firstName: order.first_name,
+      totalAmount: order.total_amount
+    });
+
+    res.json({ success: true, message: 'Order cancelled and refund initiated' });
+  } catch (error: any) {
+    console.error('Cancel order error:', error);
+    res.status(400).json({ error: 'Failed to cancel order', details: error.message });
   }
 };

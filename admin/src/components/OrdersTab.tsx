@@ -31,6 +31,21 @@ export default function OrdersTab() {
     }
   }
 
+  const handleCancelOrder = async (order: any) => {
+    if (!confirm(`Cancel order #${order.id} and refund £${order.total_amount}?`)) return;
+    
+    try {
+      const success = await API.cancelOrder(order.id);
+      if (success) {
+        alert('Order cancelled and refund initiated!');
+        fetchOrders();
+      }
+    } catch (err) {
+      console.error('Failed to cancel order');
+      alert('Failed to cancel order');
+    }
+  };
+
   const filteredOrders = orders.filter((order: any) => {
     if (activeTab === 'out_for_delivery') {
       return order.status === 'ready' && order.driver_id
@@ -130,12 +145,21 @@ export default function OrdersTab() {
                   )}
                   <td className="actions-cell">
                     {order.status === 'pending' && (
-                      <button 
-                        className="action-btn ready-btn"
-                        onClick={() => handleStatusUpdate(order.id, 'ready')}
-                      >
-                        Mark as Ready
-                      </button>
+                      <>
+                        <button 
+                          className="action-btn ready-btn"
+                          onClick={() => handleStatusUpdate(order.id, 'ready')}
+                        >
+                          Mark as Ready
+                        </button>
+                        <button 
+                          className="action-btn delete-btn"
+                          onClick={() => handleCancelOrder(order)}
+                          style={{ marginLeft: '5px' }}
+                        >
+                          Cancel & Refund
+                        </button>
+                      </>
                     )}
                     {activeTab === 'out_for_delivery' && (
                       <button 
