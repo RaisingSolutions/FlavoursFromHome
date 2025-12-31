@@ -122,9 +122,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
       
       const message = `✅ Order #${order.id} Confirmed!\n\nCustomer: ${firstName}\nEmail: ${email}\nPhone: ${phoneNumber}\nType: ${orderType}${addressLine}\n\nItems:\n${itemsList}\n\nTotal: £${totalAmount.toFixed(2)}\nPayment: PAID (Online)\n\nThank you for your order!`;
       
-      console.log('Sending WhatsApp to:', phoneNumber);
-      sendWhatsAppMessage(phoneNumber, message);
-      
+      // Only send WhatsApp to admin
       const adminPhone = process.env.ADMIN_PHONE_NUMBER;
       if (adminPhone) {
         console.log('Sending WhatsApp to admin:', adminPhone);

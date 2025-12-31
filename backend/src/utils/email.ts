@@ -48,7 +48,6 @@ export const sendOrderConfirmationEmail = async (
             <p style="color: #2c5f2d;"><strong>Payment Status: PAID ✓</strong></p>
           </div>
           
-          <p>You will also receive a WhatsApp confirmation shortly.</p>
           <p>If you have any questions, please contact us.</p>
           
           <p style="margin-top: 30px;">
