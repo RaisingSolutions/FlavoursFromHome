@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { supabase } from '../utils/supabase';
+import { sendWhatsAppMessage } from '../utils/whatsapp';
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
@@ -13,6 +14,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
         weight,
         image_url,
         category_id,
+        inventory,
         categories (
           name
         )
@@ -88,7 +90,7 @@ export const getProductsByCategory = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { name, description, price, category_id, weight, image_url } = req.body;
+    const { name, description, price, category_id, weight, image_url, inventory } = req.body;
     
     const { data, error } = await supabase
       .from('products')
@@ -98,7 +100,8 @@ export const createProduct = async (req: Request, res: Response) => {
         price,
         category_id,
         weight,
-        image_url
+        image_url,
+        inventory: inventory || 0
       })
       .select()
       .single();
@@ -114,7 +117,7 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, price, category_id, weight, image_url } = req.body;
+    const { name, description, price, category_id, weight, image_url, inventory } = req.body;
     
     const { data, error } = await supabase
       .from('products')
@@ -125,6 +128,7 @@ export const updateProduct = async (req: Request, res: Response) => {
         category_id,
         weight,
         image_url,
+        inventory,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
@@ -132,6 +136,15 @@ export const updateProduct = async (req: Request, res: Response) => {
       .single();
 
     if (error) throw error;
+
+    // Send WhatsApp alert if inventory is 10 or less
+    if (inventory <= 10) {
+      const adminPhone = process.env.ADMIN_PHONE_NUMBER;
+      if (adminPhone) {
+        const message = `⚠️ Low Stock Alert!\n\nProduct: ${name}\nCurrent Stock: ${inventory}\n\nPlease restock soon.`;
+        sendWhatsAppMessage(adminPhone, message);
+      }
+    }
 
     res.json(data);
   } catch (error) {

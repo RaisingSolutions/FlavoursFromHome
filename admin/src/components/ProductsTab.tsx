@@ -7,7 +7,7 @@ export default function ProductsTab() {
   const [categories, setCategories] = useState([])
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '' })
+  const [formData, setFormData] = useState({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '' })
 
   const fetchProducts = async () => {
     try {
@@ -40,10 +40,11 @@ export default function ProductsTab() {
         parseFloat(formData.price),
         formData.weight,
         parseInt(formData.category_id),
-        formData.image_url
+        formData.image_url,
+        parseInt(formData.inventory)
       )
       if (success) {
-        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '' })
+        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '' })
         setShowCreateForm(false)
         fetchProducts()
       }
@@ -60,7 +61,8 @@ export default function ProductsTab() {
       price: item.price?.toString() || '',
       weight: item.weight || '',
       category_id: item.category_id?.toString() || '',
-      image_url: item.image_url || ''
+      image_url: item.image_url || '',
+      inventory: item.inventory?.toString() || '0'
     })
     setShowCreateForm(true)
   }
@@ -74,10 +76,11 @@ export default function ProductsTab() {
         parseFloat(formData.price),
         formData.weight,
         parseInt(formData.category_id),
-        formData.image_url
+        formData.image_url,
+        parseInt(formData.inventory)
       )
       if (success) {
-        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '' })
+        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '' })
         setShowCreateForm(false)
         setEditingItem(null)
         fetchProducts()
@@ -104,7 +107,7 @@ export default function ProductsTab() {
         <button className="create-btn" onClick={() => {
           setShowCreateForm(true)
           setEditingItem(null)
-          setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '' })
+          setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '' })
         }}>Create Product</button>
       </div>
       
@@ -135,6 +138,12 @@ export default function ProductsTab() {
             value={formData.weight}
             onChange={(e) => setFormData({...formData, weight: e.target.value})}
           />
+          <input
+            type="number"
+            placeholder="Inventory Stock"
+            value={formData.inventory}
+            onChange={(e) => setFormData({...formData, inventory: e.target.value})}
+          />
           <select
             value={formData.category_id}
             onChange={(e) => setFormData({...formData, category_id: e.target.value})}
@@ -157,7 +166,7 @@ export default function ProductsTab() {
             <button className="cancel-btn" onClick={() => {
               setShowCreateForm(false)
               setEditingItem(null)
-              setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '' })
+              setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '' })
             }}>Cancel</button>
           </div>
         </div>
@@ -181,6 +190,7 @@ export default function ProductsTab() {
               <span className="price">£{product.price}</span>
               <span className="weight">{product.weight}</span>
               <span className="category">{product.categories?.name}</span>
+              <span className="inventory" style={{ color: product.inventory <= 10 ? 'red' : 'green', fontWeight: 'bold' }}>Stock: {product.inventory}</span>
             </div>
             <div className="item-actions">
               <button className="edit-btn" onClick={() => handleEdit(product)}>Edit</button>

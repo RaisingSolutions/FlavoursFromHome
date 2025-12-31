@@ -169,20 +169,20 @@ export const fetchProducts = async () => {
   return response.json()
 }
 
-export const createProduct = async (name: string, description: string, price: number, weight: string, category_id: number, image_url: string) => {
+export const createProduct = async (name: string, description: string, price: number, weight: string, category_id: number, image_url: string, inventory: number) => {
   const response = await fetch(`${BASE_URL}/products`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, description, price, weight, category_id, image_url }),
+    body: JSON.stringify({ name, description, price, weight, category_id, image_url, inventory }),
   })
   return response.ok
 }
 
-export const updateProduct = async (id: number, name: string, description: string, price: number, weight: string, category_id: number, image_url: string) => {
+export const updateProduct = async (id: number, name: string, description: string, price: number, weight: string, category_id: number, image_url: string, inventory: number) => {
   const response = await fetch(`${BASE_URL}/products/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, description, price, weight, category_id, image_url }),
+    body: JSON.stringify({ name, description, price, weight, category_id, image_url, inventory }),
   })
   return response.ok
 }

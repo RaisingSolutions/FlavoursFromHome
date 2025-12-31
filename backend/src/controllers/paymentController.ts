@@ -115,6 +115,32 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
       console.log('Order items created');
 
+      // Decrease inventory for each product
+      for (const item of cart) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('inventory, name')
+          .eq('id', item.id)
+          .single();
+
+        if (product) {
+          const newInventory = product.inventory - item.quantity;
+          await supabase
+            .from('products')
+            .update({ inventory: newInventory })
+            .eq('id', item.id);
+
+          // Send WhatsApp alert if inventory is 10 or less
+          if (newInventory <= 10) {
+            const adminPhone = process.env.ADMIN_PHONE_NUMBER;
+            if (adminPhone) {
+              const alertMessage = `⚠️ Low Stock Alert!\n\nProduct: ${product.name}\nCurrent Stock: ${newInventory}\n\nPlease restock soon.`;
+              sendWhatsAppMessage(adminPhone, alertMessage);
+            }
+          }
+        }
+      }
+
       // Send WhatsApp notifications
       const itemsList = cart.map((item: any) => `${item.quantity}x ${item.name}`).join('\n');
       const orderType = address === 'Collection' ? '📦 Collection' : '🚚 Delivery';

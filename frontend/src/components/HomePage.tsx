@@ -91,6 +91,12 @@ export default function HomePage({
                 <div className="product-details">
                   <span className="price">£{product.price}</span>
                   <span className="weight">{product.weight}</span>
+                  {product.inventory <= 10 && product.inventory > 0 && (
+                    <span style={{ color: 'red', fontWeight: 'bold', fontSize: '12px' }}>Only {product.inventory} left!</span>
+                  )}
+                  {product.inventory === 0 && (
+                    <span style={{ color: 'red', fontWeight: 'bold', fontSize: '12px' }}>Out of Stock</span>
+                  )}
                 </div>
                 {cart.find(item => item.id === product.id) ? (
                   <div className="quantity-controls">
@@ -106,6 +112,7 @@ export default function HomePage({
                     <button 
                       className="qty-btn"
                       onClick={() => onUpdateQuantity(product.id, 1)}
+                      disabled={cart.find(item => item.id === product.id)?.quantity >= product.inventory}
                     >
                       +
                     </button>
@@ -114,8 +121,9 @@ export default function HomePage({
                   <button 
                     className="add-to-cart-btn"
                     onClick={() => onAddToCart(product)}
+                    disabled={product.inventory === 0}
                   >
-                    Add to Cart
+                    {product.inventory === 0 ? 'Out of Stock' : 'Add to Cart'}
                   </button>
                 )}
               </div>
