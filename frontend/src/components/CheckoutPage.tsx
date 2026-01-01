@@ -27,9 +27,40 @@ export default function CheckoutPage({
   const [address, setAddress] = useState('')
   const [orderType, setOrderType] = useState<'delivery' | 'collection'>('delivery')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; amount: number } | null>(null)
+  const [verifyingCoupon, setVerifyingCoupon] = useState(false)
 
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  const isDeliveryMinimumMet = totalAmount >= 20
+  const discount = appliedCoupon ? appliedCoupon.amount : 0
+  const finalAmount = Math.max(0, totalAmount - discount)
+  const isDeliveryMinimumMet = finalAmount >= 20
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return
+    
+    setVerifyingCoupon(true)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/payment/verify-coupon`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: couponCode })
+      })
+
+      const data = await response.json()
+      
+      if (response.ok) {
+        setAppliedCoupon({ code: couponCode, amount: data.amount })
+        onShowToast(`Coupon applied! £${data.amount} discount`, 'success')
+      } else {
+        onShowToast(data.error || 'Invalid coupon code', 'error')
+      }
+    } catch {
+      onShowToast('Failed to verify coupon', 'error')
+    } finally {
+      setVerifyingCoupon(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,7 +84,7 @@ export default function CheckoutPage({
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/payment/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cart, customerInfo })
+        body: JSON.stringify({ cart, customerInfo, couponCode: appliedCoupon?.code })
       })
 
       if (!response.ok) throw new Error('Failed to create checkout session')
@@ -168,6 +199,47 @@ export default function CheckoutPage({
             <p className="payment-note" style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>You will be redirected to complete your payment securely</p>
           </div>
 
+          <div className="form-section">
+            <h3>Coupon Code</h3>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+              <div className="form-group" style={{ flex: 1, margin: 0 }}>
+                <input
+                  type="text"
+                  placeholder="Enter coupon code"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  disabled={!!appliedCoupon}
+                />
+              </div>
+              {appliedCoupon ? (
+                <button 
+                  type="button" 
+                  className="btn-secondary"
+                  onClick={() => {
+                    setAppliedCoupon(null)
+                    setCouponCode('')
+                  }}
+                >
+                  Remove
+                </button>
+              ) : (
+                <button 
+                  type="button" 
+                  className="btn-primary"
+                  onClick={handleApplyCoupon}
+                  disabled={verifyingCoupon || !couponCode.trim()}
+                >
+                  {verifyingCoupon ? 'Verifying...' : 'Apply'}
+                </button>
+              )}
+            </div>
+            {appliedCoupon && (
+              <div style={{ marginTop: '10px', padding: '10px', background: '#d4edda', borderRadius: '4px', color: '#155724' }}>
+                ✓ Coupon "{appliedCoupon.code}" applied - £{appliedCoupon.amount.toFixed(2)} discount
+              </div>
+            )}
+          </div>
+
           <div className="order-summary-checkout">
             <h3>Order Summary</h3>
             <div className="summary-items">
@@ -178,9 +250,19 @@ export default function CheckoutPage({
                 </div>
               ))}
             </div>
+            <div className="summary-subtotal">
+              <span>Subtotal</span>
+              <span>£{totalAmount.toFixed(2)}</span>
+            </div>
+            {appliedCoupon && (
+              <div className="summary-discount">
+                <span>Discount ({appliedCoupon.code})</span>
+                <span style={{ color: '#28a745' }}>-£{discount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="summary-total">
               <span>Total ({cartCount} items)</span>
-              <span>£{totalAmount.toFixed(2)}</span>
+              <span>£{finalAmount.toFixed(2)}</span>
             </div>
           </div>
 
