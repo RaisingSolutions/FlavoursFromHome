@@ -29,9 +29,10 @@ export const getAllOrders = async (req: Request, res: Response) => {
       `)
       .order('order_date', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch orders' });
+    }
 
-    // Get driver usernames
     const driverIds = [...new Set(data.map((o: any) => o.driver_id).filter(Boolean))];
     let drivers: any[] = [];
     if (driverIds.length > 0) {
@@ -42,7 +43,6 @@ export const getAllOrders = async (req: Request, res: Response) => {
       drivers = driversData || [];
     }
 
-    // Format the data to include product names and driver username
     const formattedOrders = data.map(order => ({
       ...order,
       driver_username: drivers.find((d: any) => d.id === order.driver_id)?.username,
@@ -62,7 +62,6 @@ export const createOrder = async (req: Request, res: Response) => {
   try {
     const { first_name, email, phone_number, address, payment_method, total_amount, items } = req.body;
 
-    // Create order
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -79,19 +78,19 @@ export const createOrder = async (req: Request, res: Response) => {
 
     if (orderError) {
       console.error('Order creation error:', orderError);
-      throw orderError;
+      return res.status(400).json({ error: 'Failed to create order' });
     }
 
-    // Get product prices and names
     const productIds = items.map((item: any) => item.product_id);
     const { data: products, error: productsError } = await supabase
       .from('products')
       .select('id, name, price')
       .in('id', productIds);
 
-    if (productsError) throw productsError;
+    if (productsError) {
+      return res.status(400).json({ error: 'Failed to fetch products' });
+    }
 
-    // Create order items with prices
     const orderItems = items.map((item: any) => {
       const product = products?.find(p => p.id === item.product_id);
       return {
@@ -108,26 +107,21 @@ export const createOrder = async (req: Request, res: Response) => {
 
     if (itemsError) {
       console.error('Order items creation error:', itemsError);
-      throw itemsError;
+      return res.status(400).json({ error: 'Failed to create order items' });
     }
 
-    // Get product names for WhatsApp message
     const itemsWithNames = items.map((item: any) => {
       const product = products?.find(p => p.id === item.product_id);
       return `${item.quantity}x ${product?.name || 'Product'}`;
     }).join('\n');
 
-    // Determine order type
     const orderType = address === 'Collection' ? '📦 Collection' : '🚚 Delivery';
     const addressLine = address === 'Collection' ? '' : `\nAddress: ${address}`;
 
-    // Send WhatsApp notification to customer and admin
     const message = `✅ Order #${order.id} Confirmed!\n\nCustomer: ${first_name}\nEmail: ${email}\nPhone: ${phone_number}\nType: ${orderType}${addressLine}\n\nItems:\n${itemsWithNames}\n\nTotal: £${total_amount}\nPayment: ${payment_method}\n\nThank you for your order!`;
     
-    // Send to customer
     sendWhatsAppMessage(phone_number, message);
     
-    // Send to admin
     const adminPhone = process.env.ADMIN_PHONE_NUMBER;
     if (adminPhone) {
       sendWhatsAppMessage(adminPhone, message);
@@ -152,9 +146,10 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       .select('*, order_items(quantity, products(name))')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      return res.status(400).json({ error: 'Failed to update order status' });
+    }
 
-    // Send feedback request email when order is delivered
     if (status === 'delivered') {
       try {
         const { sendFeedbackRequestEmail } = await import('../utils/email');
@@ -179,29 +174,26 @@ export const cancelOrder = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    // Get order details
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('*, order_items(quantity, product_id, products(name))')
       .eq('id', id)
       .single();
 
-    if (orderError) throw orderError;
+    if (orderError) {
+      return res.status(400).json({ error: 'Failed to fetch order' });
+    }
 
-    // Only refund if payment was online and has stripe session
     if (order.payment_method === 'ONLINE' && order.stripe_session_id) {
-      // Get payment intent from session
       const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
       
       if (session.payment_intent) {
-        // Create refund
         await stripe.refunds.create({
           payment_intent: session.payment_intent as string,
         });
       }
     }
 
-    // Restore inventory
     for (const item of order.order_items) {
       await supabase.rpc('increment_inventory', {
         product_id: item.product_id,
@@ -209,13 +201,11 @@ export const cancelOrder = async (req: Request, res: Response) => {
       });
     }
 
-    // Update order status to cancelled
     await supabase
       .from('orders')
       .update({ status: 'cancelled' })
       .eq('id', id);
 
-    // Send cancellation email to customer
     const { sendOrderCancellationEmail } = await import('../utils/email');
     await sendOrderCancellationEmail(order.email, {
       orderId: order.id,

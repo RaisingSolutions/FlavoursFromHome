@@ -30,9 +30,7 @@ export const getOrderForFeedback = async (req: Request, res: Response) => {
       .eq('status', 'delivered')
       .single();
 
-    if (error) throw error;
-
-    if (!order) {
+    if (error || !order) {
       return res.status(404).json({ error: 'Order not found or not delivered' });
     }
 
@@ -46,14 +44,15 @@ export const submitFeedback = async (req: Request, res: Response) => {
   try {
     const { orderId, productRatings, deliveryRating, driverRating, deliveryComments } = req.body;
 
-    // Check if feedback already submitted
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('feedback_submitted, email, first_name')
       .eq('id', orderId)
       .single();
 
-    if (orderError) throw orderError;
+    if (orderError) {
+      return res.status(500).json({ error: 'Failed to fetch order' });
+    }
 
     if (order.feedback_submitted) {
       return res.status(400).json({ 
@@ -62,7 +61,6 @@ export const submitFeedback = async (req: Request, res: Response) => {
       });
     }
 
-    // Save feedback
     const { error: feedbackError } = await supabase
       .from('feedbacks')
       .insert({
@@ -73,12 +71,13 @@ export const submitFeedback = async (req: Request, res: Response) => {
         delivery_comments: deliveryComments
       });
 
-    if (feedbackError) throw feedbackError;
+    if (feedbackError) {
+      return res.status(500).json({ error: 'Failed to save feedback' });
+    }
 
-    // Generate coupon
     const couponCode = generateCouponCode();
     const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + 6); // 6 months validity
+    expiresAt.setMonth(expiresAt.getMonth() + 6);
 
     const { error: couponError } = await supabase
       .from('coupons')
@@ -89,15 +88,15 @@ export const submitFeedback = async (req: Request, res: Response) => {
         expires_at: expiresAt.toISOString()
       });
 
-    if (couponError) throw couponError;
+    if (couponError) {
+      return res.status(500).json({ error: 'Failed to generate coupon' });
+    }
 
-    // Mark feedback as submitted
     await supabase
       .from('orders')
       .update({ feedback_submitted: true })
       .eq('id', orderId);
 
-    // Send coupon email
     await sendCouponEmail(order.email, {
       firstName: order.first_name,
       couponCode
@@ -132,21 +131,20 @@ export const getAllFeedbacks = async (req: Request, res: Response) => {
       `)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch feedbacks' });
+    }
 
-    // Get all product IDs from ratings
     const productIds = new Set<number>();
     data.forEach((fb: any) => {
       Object.keys(fb.product_ratings).forEach(id => productIds.add(parseInt(id)));
     });
 
-    // Fetch product names
     const { data: products } = await supabase
       .from('products')
       .select('id, name')
       .in('id', Array.from(productIds));
 
-    // Format response with product names
     const formatted = data.map((fb: any) => {
       const ratings: any = {};
       Object.entries(fb.product_ratings).forEach(([id, data]: any) => {
