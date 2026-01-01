@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const adminController_1 = require("../controllers/adminController");
+const superAdminMiddleware_1 = require("../middleware/superAdminMiddleware");
+const router = (0, express_1.Router)();
+router.post('/login', adminController_1.loginAdmin);
+router.get('/users', adminController_1.getAllAdmins);
+router.get('/drivers', adminController_1.getDrivers);
+router.post('/users', superAdminMiddleware_1.requireSuperAdmin, adminController_1.createAdmin);
+router.post('/drivers', superAdminMiddleware_1.requireSuperAdmin, adminController_1.createDriver);
+router.put('/users/:id/status', superAdminMiddleware_1.requireSuperAdmin, adminController_1.updateAdminStatus);
+router.delete('/users/:id', superAdminMiddleware_1.requireSuperAdmin, adminController_1.deleteAdmin);
+exports.default = router;

@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const deliveryController_1 = require("../controllers/deliveryController");
+const router = (0, express_1.Router)();
+router.post('/generate-routes', deliveryController_1.generateRoutes);
+router.post('/generate-routes-from-orders', deliveryController_1.generateRoutesFromOrders);
+router.post('/assign-route', deliveryController_1.assignRoute);
+router.get('/driver-deliveries', deliveryController_1.getDriverDeliveries);
+router.put('/mark-delivered/:id', deliveryController_1.markAsDelivered);
+exports.default = router;
