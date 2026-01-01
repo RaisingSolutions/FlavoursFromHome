@@ -5,6 +5,7 @@ import HomePage from './components/HomePage'
 import CartPage from './components/CartPage'
 import CheckoutPage from './components/CheckoutPage'
 import SuccessPage from './components/SuccessPage'
+import FeedbackPage from './components/FeedbackPage'
 import Toast from './components/Toast'
 
 interface CartItem {
@@ -33,17 +34,16 @@ function App() {
       } else {
         localStorage.removeItem('cart')
         localStorage.removeItem('cartTimestamp')
-        localStorage.removeItem('currentPage')
       }
     }
     return []
   })
   const [cartCount, setCartCount] = useState(0)
-  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout' | 'success'>(() => {
+  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout' | 'success' | 'feedback'>(() => {
     const params = new URLSearchParams(window.location.search)
+    if (params.get('order')) return 'feedback'
     if (params.get('success') === 'true') return 'success'
-    const saved = localStorage.getItem('currentPage')
-    return (saved as 'home' | 'cart' | 'checkout' | 'success') || 'home'
+    return 'home'
   })
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
@@ -62,10 +62,6 @@ function App() {
     }
     setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0))
   }, [cart])
-
-  useEffect(() => {
-    localStorage.setItem('currentPage', currentPage)
-  }, [currentPage])
 
   const fetchCategories = async () => {
     try {
@@ -135,57 +131,61 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <nav className="navbar">
-        <div className="navbar-brand" onClick={() => setCurrentPage('home')} style={{ cursor: 'pointer' }}>
-          <img src="https://res.cloudinary.com/dulm4r5mo/image/upload/v1763129727/FFH_Logo_f47yft.png" alt="FFH Logo" className="navbar-logo" />
-          Flavours From Home
-        </div>
-        <div className="navbar-actions">
-          <button className="cart-btn" onClick={() => setCurrentPage('cart')}>
-            🛒 Cart ({cartCount})
-          </button>
-        </div>
-      </nav>
-      
-      <main className="main-content">
-        {currentPage === 'success' ? (
-          <SuccessPage 
-            onContinueShopping={() => {
-              setCart([])
-              setCartCount(0)
-              setCurrentPage('home')
-            }}
-          />
-        ) : currentPage === 'checkout' ? (
-          <CheckoutPage 
-            cart={cart}
-            cartCount={cartCount}
-            onBackToCart={() => setCurrentPage('cart')}
-            onShowToast={(message, type) => setToast({ message, type })}
-          />
-        ) : currentPage === 'cart' ? (
-          <CartPage 
-            cart={cart}
-            cartCount={cartCount}
-            onUpdateQuantity={updateQuantity}
-            onContinueShopping={() => setCurrentPage('home')}
-            onCheckout={() => setCurrentPage('checkout')}
-          />
-        ) : (
-          <HomePage 
-            categories={categories}
-            products={products}
-            selectedCategory={selectedCategory}
-            cart={cart}
-            onCategoryFilter={handleCategoryFilter}
-            onAddToCart={addToCart}
-            onUpdateQuantity={updateQuantity}
-          />
-        )}
-      </main>
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    </div>
+    currentPage === 'feedback' ? (
+      <FeedbackPage />
+    ) : (
+      <div className="app">
+        <nav className="navbar">
+          <div className="navbar-brand" onClick={() => setCurrentPage('home')} style={{ cursor: 'pointer' }}>
+            <img src="https://res.cloudinary.com/dulm4r5mo/image/upload/v1763129727/FFH_Logo_f47yft.png" alt="FFH Logo" className="navbar-logo" />
+            Flavours From Home
+          </div>
+          <div className="navbar-actions">
+            <button className="cart-btn" onClick={() => setCurrentPage('cart')}>
+              🛒 Cart ({cartCount})
+            </button>
+          </div>
+        </nav>
+        
+        <main className="main-content">
+          {currentPage === 'success' ? (
+            <SuccessPage 
+              onContinueShopping={() => {
+                setCart([])
+                setCartCount(0)
+                setCurrentPage('home')
+              }}
+            />
+          ) : currentPage === 'checkout' ? (
+            <CheckoutPage 
+              cart={cart}
+              cartCount={cartCount}
+              onBackToCart={() => setCurrentPage('cart')}
+              onShowToast={(message, type) => setToast({ message, type })}
+            />
+          ) : currentPage === 'cart' ? (
+            <CartPage 
+              cart={cart}
+              cartCount={cartCount}
+              onUpdateQuantity={updateQuantity}
+              onContinueShopping={() => setCurrentPage('home')}
+              onCheckout={() => setCurrentPage('checkout')}
+            />
+          ) : (
+            <HomePage 
+              categories={categories}
+              products={products}
+              selectedCategory={selectedCategory}
+              cart={cart}
+              onCategoryFilter={handleCategoryFilter}
+              onAddToCart={addToCart}
+              onUpdateQuantity={updateQuantity}
+            />
+          )}
+        </main>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      </div>
+    )
   )
 }
 

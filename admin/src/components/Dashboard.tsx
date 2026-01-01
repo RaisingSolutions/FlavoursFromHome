@@ -8,6 +8,7 @@ import DeliveryRoutes from './DeliveryRoutes'
 import DriverView from './DriverView'
 import DeliveriesTab from './DeliveriesTab'
 import StockLevelsTab from './StockLevelsTab'
+import FeedbackTab from './FeedbackTab'
 
 interface DashboardProps {
   isSuperAdmin: boolean
@@ -91,6 +92,12 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, onSignOut }
               >
                 Delivery Routes
               </button>
+              <button 
+                className={`tab ${activeTab === 'feedback' ? 'active' : ''}`}
+                onClick={() => setActiveTab('feedback')}
+              >
+                Feedback
+              </button>
             </div>
 
             <div className="tab-content">
@@ -100,6 +107,7 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, onSignOut }
               {activeTab === 'stock' && <StockLevelsTab />}
               {activeTab === 'deliveries' && <DeliveriesTab />}
               {activeTab === 'delivery' && <DeliveryRoutes />}
+              {activeTab === 'feedback' && <FeedbackTab />}
             </div>
           </>
         )}

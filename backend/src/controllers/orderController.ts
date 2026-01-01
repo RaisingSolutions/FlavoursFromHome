@@ -149,13 +149,28 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       .from('orders')
       .update({ status })
       .eq('id', id)
-      .select()
+      .select('*, order_items(quantity, products(name))')
       .single();
 
     if (error) throw error;
 
+    // Send feedback request email when order is delivered
+    if (status === 'delivered') {
+      try {
+        const { sendFeedbackRequestEmail } = await import('../utils/email');
+        await sendFeedbackRequestEmail(data.email, {
+          orderId: data.id,
+          firstName: data.first_name
+        });
+        console.log('Feedback email sent to:', data.email);
+      } catch (emailError) {
+        console.error('Failed to send feedback email:', emailError);
+      }
+    }
+
     res.json(data);
   } catch (error) {
+    console.error('Update order status error:', error);
     res.status(400).json({ error: 'Failed to update order status' });
   }
 };

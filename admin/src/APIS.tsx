@@ -219,3 +219,8 @@ export const fetchDeliveries = async () => {
   const response = await fetch(`${BASE_URL}/products/deliveries/history`)
   return response.json()
 }
+
+export const fetchFeedbacks = async () => {
+  const response = await fetch(`${BASE_URL}/feedback/all`)
+  return response.json()
+}

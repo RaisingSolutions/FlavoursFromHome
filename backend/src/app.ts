@@ -7,6 +7,7 @@ import adminRoutes from './routes/adminRoutes';
 import orderRoutes from './routes/orderRoutes';
 import deliveryRoutes from './routes/deliveryRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+import feedbackRoutes from './routes/feedbackRoutes';
 
 const app = express();
 
@@ -27,5 +28,6 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 export default app;

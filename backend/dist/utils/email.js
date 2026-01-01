@@ -1,36 +1,28 @@
-import nodemailer from 'nodemailer';
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.hostinger.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.sendCouponEmail = exports.sendFeedbackRequestEmail = exports.sendOrderCancellationEmail = exports.sendOrderConfirmationEmail = void 0;
+const nodemailer_1 = __importDefault(require("nodemailer"));
+const transporter = nodemailer_1.default.createTransport({
+    host: 'smtp.hostinger.com',
+    port: 465,
+    secure: true,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+    },
 });
-
-export const sendOrderConfirmationEmail = async (
-  to: string,
-  orderDetails: {
-    orderId: number;
-    firstName: string;
-    items: string;
-    total: number;
-    address: string;
-    orderType: string;
-  }
-) => {
-  try {
-    const { orderId, firstName, items, total, address, orderType } = orderDetails;
-    
-    const addressLine = orderType === 'delivery' ? `<p><strong>Delivery Address:</strong> ${address}</p>` : '<p><strong>Collection:</strong> Contact Sivaji at 07507 000525</p>';
-    
-    await transporter.sendMail({
-      from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
-      to: to,
-      subject: `Order #${orderId} Confirmed - Flavours From Home`,
-      html: `
+const sendOrderConfirmationEmail = async (to, orderDetails) => {
+    try {
+        const { orderId, firstName, items, total, address, orderType } = orderDetails;
+        const addressLine = orderType === 'delivery' ? `<p><strong>Delivery Address:</strong> ${address}</p>` : '<p><strong>Collection:</strong> Contact Sivaji at 07507 000525</p>';
+        await transporter.sendMail({
+            from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
+            to: to,
+            subject: `Order #${orderId} Confirmed - Flavours From Home`,
+            html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #2c5f2d;">✅ Order Confirmed!</h1>
           <p>Hi ${firstName},</p>
@@ -56,30 +48,22 @@ export const sendOrderConfirmationEmail = async (
           </p>
         </div>
       `,
-    });
-    
-    console.log('Order confirmation email sent to:', to);
-  } catch (error) {
-    console.error('Email send error:', error);
-  }
+        });
+        console.log('Order confirmation email sent to:', to);
+    }
+    catch (error) {
+        console.error('Email send error:', error);
+    }
 };
-
-export const sendOrderCancellationEmail = async (
-  to: string,
-  orderDetails: {
-    orderId: number;
-    firstName: string;
-    totalAmount: number;
-  }
-) => {
-  try {
-    const { orderId, firstName, totalAmount } = orderDetails;
-    
-    await transporter.sendMail({
-      from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
-      to: to,
-      subject: `Order #${orderId} Cancelled - Flavours From Home`,
-      html: `
+exports.sendOrderConfirmationEmail = sendOrderConfirmationEmail;
+const sendOrderCancellationEmail = async (to, orderDetails) => {
+    try {
+        const { orderId, firstName, totalAmount } = orderDetails;
+        await transporter.sendMail({
+            from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
+            to: to,
+            subject: `Order #${orderId} Cancelled - Flavours From Home`,
+            html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #d32f2f;">❌ Order Cancelled</h1>
           <p>Hi ${firstName},</p>
@@ -99,30 +83,23 @@ export const sendOrderCancellationEmail = async (
           </p>
         </div>
       `,
-    });
-    
-    console.log('Order cancellation email sent to:', to);
-  } catch (error) {
-    console.error('Email send error:', error);
-  }
+        });
+        console.log('Order cancellation email sent to:', to);
+    }
+    catch (error) {
+        console.error('Email send error:', error);
+    }
 };
-
-export const sendFeedbackRequestEmail = async (
-  to: string,
-  orderDetails: {
-    orderId: number;
-    firstName: string;
-  }
-) => {
-  try {
-    const { orderId, firstName } = orderDetails;
-    const feedbackUrl = `https://flavours-from-home.co.uk/feedback?order=${orderId}`;
-    
-    await transporter.sendMail({
-      from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
-      to: to,
-      subject: `Order Delivered! Get £5 Off Your Next Order - Flavours From Home`,
-      html: `
+exports.sendOrderCancellationEmail = sendOrderCancellationEmail;
+const sendFeedbackRequestEmail = async (to, orderDetails) => {
+    try {
+        const { orderId, firstName } = orderDetails;
+        const feedbackUrl = `https://flavours-from-home.co.uk/feedback?order=${orderId}`;
+        await transporter.sendMail({
+            from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
+            to: to,
+            subject: `Order Delivered! Get £5 Off Your Next Order - Flavours From Home`,
+            html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #2c5f2d;">✅ Order #${orderId} Delivered!</h1>
           <p>Hi ${firstName},</p>
@@ -144,29 +121,22 @@ export const sendFeedbackRequestEmail = async (
           </p>
         </div>
       `,
-    });
-    
-    console.log('Feedback request email sent to:', to);
-  } catch (error) {
-    console.error('Email send error:', error);
-  }
+        });
+        console.log('Feedback request email sent to:', to);
+    }
+    catch (error) {
+        console.error('Email send error:', error);
+    }
 };
-
-export const sendCouponEmail = async (
-  to: string,
-  details: {
-    firstName: string;
-    couponCode: string;
-  }
-) => {
-  try {
-    const { firstName, couponCode } = details;
-    
-    await transporter.sendMail({
-      from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
-      to: to,
-      subject: `Your £5 Voucher Code - Flavours From Home`,
-      html: `
+exports.sendFeedbackRequestEmail = sendFeedbackRequestEmail;
+const sendCouponEmail = async (to, details) => {
+    try {
+        const { firstName, couponCode } = details;
+        await transporter.sendMail({
+            from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
+            to: to,
+            subject: `Your £5 Voucher Code - Flavours From Home`,
+            html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #2c5f2d;">🎉 Thank You for Your Feedback!</h1>
           <p>Hi ${firstName},</p>
@@ -188,10 +158,11 @@ export const sendCouponEmail = async (
           </p>
         </div>
       `,
-    });
-    
-    console.log('Coupon email sent to:', to);
-  } catch (error) {
-    console.error('Email send error:', error);
-  }
+        });
+        console.log('Coupon email sent to:', to);
+    }
+    catch (error) {
+        console.error('Email send error:', error);
+    }
 };
+exports.sendCouponEmail = sendCouponEmail;

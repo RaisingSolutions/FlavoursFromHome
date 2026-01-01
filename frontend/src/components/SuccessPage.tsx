@@ -12,10 +12,8 @@ export default function SuccessPage({ onContinueShopping }: SuccessPageProps) {
     const id = params.get('session_id')
     setSessionId(id)
     
-    // Clear cart and localStorage
     localStorage.removeItem('cart')
     localStorage.removeItem('cartTimestamp')
-    localStorage.removeItem('currentPage')
   }, [])
 
   return (
