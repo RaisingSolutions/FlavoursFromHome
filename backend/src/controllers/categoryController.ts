@@ -5,7 +5,8 @@ export const getAllCategories = async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabase
       .from('categories')
-      .select('id, name, description, image_url')
+      .select('id, name, description, image_url, is_active')
+      .eq('is_active', true)
       .order('name');
 
     if (error) throw error;
@@ -77,5 +78,23 @@ export const deleteCategory = async (req: Request, res: Response) => {
     res.json({ message: 'Category deleted successfully' });
   } catch (error) {
     res.status(400).json({ error: 'Failed to delete category' });
+  }
+};
+
+export const toggleCategoryStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body;
+    
+    const { error } = await supabase
+      .from('categories')
+      .update({ is_active })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to toggle category status' });
   }
 };

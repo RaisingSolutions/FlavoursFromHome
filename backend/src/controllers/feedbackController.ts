@@ -84,7 +84,7 @@ export const submitFeedback = async (req: Request, res: Response) => {
       .insert({
         code: couponCode,
         order_id: orderId,
-        amount: 5.00,
+        amount: 2.00,
         expires_at: expiresAt.toISOString()
       });
 

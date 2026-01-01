@@ -193,6 +193,17 @@ export default function ProductsTab() {
               <span className="inventory" style={{ color: product.inventory <= 10 ? 'red' : 'green', fontWeight: 'bold' }}>Stock: {product.inventory}</span>
             </div>
             <div className="item-actions">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={product.is_active}
+                  onChange={async () => {
+                    await API.toggleProductStatus(product.id, !product.is_active)
+                    fetchProducts()
+                  }}
+                />
+                <span>{product.is_active ? 'Active' : 'Hidden'}</span>
+              </label>
               <button className="edit-btn" onClick={() => handleEdit(product)}>Edit</button>
               <button className="delete-btn" onClick={() => handleDelete(product.id)}>Delete</button>
             </div>

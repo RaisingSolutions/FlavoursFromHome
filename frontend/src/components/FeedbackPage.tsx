@@ -99,7 +99,7 @@ export default function FeedbackPage() {
           <h2 style={{ color: '#2c5f2d', marginBottom: '15px' }}>Thank You!</h2>
           <p style={{ color: '#666', fontSize: '16px', marginBottom: '30px' }}>Your feedback has been submitted successfully!</p>
           <div style={{ background: '#f0f8ff', padding: '20px', borderRadius: '8px', border: '3px dashed #667eea' }}>
-            <h3 style={{ color: '#667eea', marginBottom: '10px' }}>Your £5 Voucher Code</h3>
+            <h3 style={{ color: '#667eea', marginBottom: '10px' }}>Your £2 Voucher Code</h3>
             <div style={{ background: 'white', padding: '15px', borderRadius: '8px', fontSize: '28px', fontWeight: 'bold', letterSpacing: '2px', color: '#2c5f2d', margin: '15px 0' }}>
               {couponCode}
             </div>
@@ -128,7 +128,7 @@ export default function FeedbackPage() {
     <div style={{ minHeight: '100vh', background: '#f5f5f5', padding: '40px 20px' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '40px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
         <h1 style={{ color: '#2c5f2d', marginBottom: '10px' }}>Rate Your Order</h1>
-        <p style={{ color: '#666', marginBottom: '30px' }}>Share your feedback and get £5 off your next order!</p>
+        <p style={{ color: '#666', marginBottom: '30px' }}>Share your feedback and get £2 off your next order!</p>
 
         <div style={{ marginBottom: '40px' }}>
           <h3 style={{ marginBottom: '20px' }}>Rate Your Products</h3>
@@ -173,7 +173,7 @@ export default function FeedbackPage() {
           onClick={handleSubmit}
           style={{ width: '100%', padding: '15px', background: '#667eea', color: 'white', border: 'none', borderRadius: '8px', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer' }}
         >
-          Submit Feedback & Get £5 Voucher
+          Submit Feedback & Get £2 Voucher
         </button>
       </div>
     </div>

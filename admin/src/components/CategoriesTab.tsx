@@ -127,6 +127,17 @@ export default function CategoriesTab() {
             <h3>{category.name}</h3>
             <p>{category.description}</p>
             <div className="item-actions">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={category.is_active}
+                  onChange={async () => {
+                    await API.toggleCategoryStatus(category.id, !category.is_active)
+                    fetchCategories()
+                  }}
+                />
+                <span>{category.is_active ? 'Active' : 'Hidden'}</span>
+              </label>
               <button className="edit-btn" onClick={() => handleEdit(category)}>Edit</button>
               <button className="delete-btn" onClick={() => handleDelete(category.id)}>Delete</button>
             </div>

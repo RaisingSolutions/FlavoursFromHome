@@ -39,6 +39,11 @@ export const getAllProducts = async (req: Request, res: Response) => {
       });
     });
 
+    // Product 15 uses product 14's rating
+    if (ratings[14]) {
+      ratings[15] = ratings[14];
+    }
+
     // Add average rating to products
     const productsWithRatings = data.map(product => ({
       ...product,
@@ -191,6 +196,24 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
     res.status(400).json({ error: 'Failed to delete product' });
+  }
+};
+
+export const toggleProductStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body;
+    
+    const { error } = await supabase
+      .from('products')
+      .update({ is_active })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to toggle product status' });
   }
 };
 

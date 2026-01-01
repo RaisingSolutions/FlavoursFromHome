@@ -224,3 +224,21 @@ export const fetchFeedbacks = async () => {
   const response = await fetch(`${BASE_URL}/feedback/all`)
   return response.json()
 }
+
+export const toggleCategoryStatus = async (id: number, isActive: boolean) => {
+  const response = await fetch(`${BASE_URL}/categories/${id}/toggle`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ is_active: isActive }),
+  })
+  return response.ok
+}
+
+export const toggleProductStatus = async (id: number, isActive: boolean) => {
+  const response = await fetch(`${BASE_URL}/products/${id}/toggle`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ is_active: isActive }),
+  })
+  return response.ok
+}
