@@ -205,3 +205,17 @@ export const deleteProduct = async (id: number) => {
   }
   return true
 }
+
+export const recordDelivery = async (deliveryDate: string, items: { product_id: number; quantity: number }[]) => {
+  const response = await fetch(`${BASE_URL}/products/record-delivery`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deliveryDate, items }),
+  })
+  return response.ok
+}
+
+export const fetchDeliveries = async () => {
+  const response = await fetch(`${BASE_URL}/products/deliveries/history`)
+  return response.json()
+}

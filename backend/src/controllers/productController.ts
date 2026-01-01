@@ -168,3 +168,82 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res.status(400).json({ error: 'Failed to delete product' });
   }
 };
+
+export const recordDelivery = async (req: Request, res: Response) => {
+  try {
+    const { deliveryDate, items } = req.body;
+
+    // Create delivery record
+    const { data: delivery, error: deliveryError } = await supabase
+      .from('deliveries')
+      .insert({ delivery_date: deliveryDate })
+      .select()
+      .single();
+
+    if (deliveryError) throw deliveryError;
+
+    // Create delivery items and update inventory
+    for (const item of items) {
+      // Save delivery item
+      await supabase
+        .from('delivery_items')
+        .insert({
+          delivery_id: delivery.id,
+          product_id: item.product_id,
+          quantity: item.quantity
+        });
+
+      // Update product inventory
+      const { data: product } = await supabase
+        .from('products')
+        .select('inventory')
+        .eq('id', item.product_id)
+        .single();
+
+      if (product) {
+        await supabase
+          .from('products')
+          .update({ inventory: product.inventory + item.quantity })
+          .eq('id', item.product_id);
+      }
+    }
+
+    res.json({ success: true, message: 'Delivery recorded and inventory updated' });
+  } catch (error: any) {
+    console.error('Record delivery error:', error);
+    res.status(400).json({ error: 'Failed to record delivery', details: error.message });
+  }
+};
+
+export const getDeliveries = async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('deliveries')
+      .select(`
+        id,
+        delivery_date,
+        delivery_items (
+          quantity,
+          products (
+            name
+          )
+        )
+      `)
+      .order('delivery_date', { ascending: false });
+
+    if (error) throw error;
+
+    // Format the data
+    const formattedDeliveries = data.map(delivery => ({
+      ...delivery,
+      items: delivery.delivery_items.map((item: any) => ({
+        quantity: item.quantity,
+        product_name: item.products.name
+      }))
+    }));
+
+    res.json(formattedDeliveries);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch deliveries' });
+  }
+};

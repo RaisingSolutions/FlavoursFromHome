@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import LoginForm from './components/LoginForm'
 import Dashboard from './components/Dashboard'
+import { ToastProvider } from './context/ToastContext'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -54,16 +55,22 @@ function App() {
 
   if (isLoggedIn) {
     return (
-      <Dashboard 
-        isSuperAdmin={isSuperAdmin}
-        adminId={adminId}
-        userRole={userRole}
-        onSignOut={handleSignOut}
-      />
+      <ToastProvider>
+        <Dashboard 
+          isSuperAdmin={isSuperAdmin}
+          adminId={adminId}
+          userRole={userRole}
+          onSignOut={handleSignOut}
+        />
+      </ToastProvider>
     )
   }
 
-  return <LoginForm onLogin={handleLogin} />
+  return (
+    <ToastProvider>
+      <LoginForm onLogin={handleLogin} />
+    </ToastProvider>
+  )
 }
 
 export default App

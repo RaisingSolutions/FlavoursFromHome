@@ -6,6 +6,8 @@ import CategoriesTab from './CategoriesTab'
 import ProductsTab from './ProductsTab'
 import DeliveryRoutes from './DeliveryRoutes'
 import DriverView from './DriverView'
+import DeliveriesTab from './DeliveriesTab'
+import StockLevelsTab from './StockLevelsTab'
 
 interface DashboardProps {
   isSuperAdmin: boolean
@@ -72,6 +74,18 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, onSignOut }
                 Products
               </button>
               <button 
+                className={`tab ${activeTab === 'stock' ? 'active' : ''}`}
+                onClick={() => setActiveTab('stock')}
+              >
+                Stock Levels
+              </button>
+              <button 
+                className={`tab ${activeTab === 'deliveries' ? 'active' : ''}`}
+                onClick={() => setActiveTab('deliveries')}
+              >
+                Deliveries
+              </button>
+              <button 
                 className={`tab ${activeTab === 'delivery' ? 'active' : ''}`}
                 onClick={() => setActiveTab('delivery')}
               >
@@ -83,6 +97,8 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, onSignOut }
               {activeTab === 'orders' && <OrdersTab />}
               {activeTab === 'categories' && <CategoriesTab />}
               {activeTab === 'products' && <ProductsTab />}
+              {activeTab === 'stock' && <StockLevelsTab />}
+              {activeTab === 'deliveries' && <DeliveriesTab />}
               {activeTab === 'delivery' && <DeliveryRoutes />}
             </div>
           </>
