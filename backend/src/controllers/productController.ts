@@ -23,7 +23,32 @@ export const getAllProducts = async (req: Request, res: Response) => {
 
     if (error) throw error;
 
-    res.json(data);
+    // Get all feedbacks
+    const { data: feedbacks } = await supabase
+      .from('feedbacks')
+      .select('product_ratings');
+
+    // Calculate average ratings per product
+    const ratings: { [key: number]: { total: number; count: number } } = {};
+    feedbacks?.forEach((fb: any) => {
+      Object.entries(fb.product_ratings).forEach(([productId, data]: any) => {
+        const id = parseInt(productId);
+        if (!ratings[id]) ratings[id] = { total: 0, count: 0 };
+        ratings[id].total += data.rating;
+        ratings[id].count += 1;
+      });
+    });
+
+    // Add average rating to products
+    const productsWithRatings = data.map(product => ({
+      ...product,
+      average_rating: ratings[product.id] 
+        ? parseFloat((ratings[product.id].total / ratings[product.id].count).toFixed(1))
+        : null,
+      rating_count: ratings[product.id]?.count || 0
+    }));
+
+    res.json(productsWithRatings);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch products' });
   }

@@ -88,6 +88,14 @@ export default function HomePage({
               <div className="product-info">
                 <h3>{product.name}</h3>
                 <p className="product-description">{product.description}</p>
+                {product.average_rating && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', margin: '8px 0' }}>
+                    <span style={{ color: '#ffc107', fontSize: '16px' }}>
+                      {'★'.repeat(Math.round(product.average_rating))}{'☆'.repeat(5 - Math.round(product.average_rating))}
+                    </span>
+                    <span style={{ fontSize: '14px', color: '#666' }}>({product.rating_count})</span>
+                  </div>
+                )}
                 <div className="product-details">
                   <span className="price">£{product.price}</span>
                   <span className="weight">{product.weight}</span>

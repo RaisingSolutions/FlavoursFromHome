@@ -52,32 +52,18 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
     }
 
     const subtotal = cart.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-    const total = Math.max(0, subtotal - discount);
+    const finalTotal = Math.max(0, subtotal - discount);
 
-    const lineItems = cart.map((item: any) => ({
+    const lineItems = [{
       price_data: {
         currency: 'gbp',
         product_data: {
-          name: item.name,
-          images: item.image_url ? [item.image_url] : [],
+          name: discount > 0 ? `Order Total (${discount} discount applied)` : 'Order Total',
         },
-        unit_amount: Math.round(item.price * 100),
+        unit_amount: Math.round(finalTotal * 100),
       },
-      quantity: item.quantity,
-    }));
-
-    if (discount > 0) {
-      lineItems.push({
-        price_data: {
-          currency: 'gbp',
-          product_data: {
-            name: `Discount (${couponCode})`,
-          },
-          unit_amount: -Math.round(discount * 100),
-        },
-        quantity: 1,
-      });
-    }
+      quantity: 1,
+    }];
 
     const cartData = cart.map((item: any) => ({
       id: item.id,
