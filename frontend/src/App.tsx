@@ -48,6 +48,15 @@ function App() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('order')) {
+      setCurrentPage('feedback')
+    } else if (params.get('success') === 'true') {
+      setCurrentPage('success')
+    }
+  }, [])
+
+  useEffect(() => {
     fetchCategories()
     fetchProducts()
   }, [])
