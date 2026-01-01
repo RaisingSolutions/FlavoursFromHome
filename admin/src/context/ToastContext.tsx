@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode } from 'react'
+import { createContext, useContext, type ReactNode } from 'react'
 import { useToast } from '../hooks/useToast'
 import ToastContainer from '../components/ToastContainer'
 
@@ -8,7 +8,7 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined)
 
-export const ToastProvider = ({ children }: { children: ReactNode }) => {
+export function ToastProvider({ children }: { children: ReactNode }) {
   const { toasts, showToast, removeToast } = useToast()
 
   return (
@@ -19,7 +19,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   )
 }
 
-export const useToastContext = () => {
+export function useToastContext() {
   const context = useContext(ToastContext)
   if (!context) {
     throw new Error('useToastContext must be used within ToastProvider')

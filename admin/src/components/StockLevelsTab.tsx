@@ -1,23 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import * as API from '../APIS'
 
 export default function StockLevelsTab() {
   const [products, setProducts] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    fetchProducts()
-  }, [])
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       const data = await API.fetchProducts()
       setProducts(data)
-    } catch (err) {
+    } catch {
       console.error('Failed to fetch products')
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase())

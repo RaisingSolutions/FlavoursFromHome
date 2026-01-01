@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react'
 import AdminManagement from './AdminManagement'
 import OrdersTab from './OrdersTab'

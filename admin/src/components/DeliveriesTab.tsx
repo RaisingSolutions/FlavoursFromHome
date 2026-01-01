@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import * as API from '../APIS'
 import { useToastContext } from '../context/ToastContext'
 
@@ -11,29 +11,29 @@ export default function DeliveriesTab() {
   const [deliveryItems, setDeliveryItems] = useState<{ product_id: number; quantity: number }[]>([])
   const { showToast } = useToastContext()
 
-  useEffect(() => {
-    fetchProducts()
-    fetchDeliveries()
-  }, [])
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       const data = await API.fetchProducts()
       setProducts(data)
-    } catch (err) {
+    } catch {
       console.error('Failed to fetch products')
     }
-  }
+  }, [])
 
-  const fetchDeliveries = async () => {
+  const fetchDeliveries = useCallback(async () => {
     try {
       const data = await API.fetchDeliveries()
       setDeliveries(Array.isArray(data) ? data : [])
-    } catch (err) {
+    } catch {
       console.error('Failed to fetch deliveries')
       setDeliveries([])
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchProducts()
+    fetchDeliveries()
+  }, [fetchProducts, fetchDeliveries])
 
   const handleAddItem = () => {
     setDeliveryItems([...deliveryItems, { product_id: 0, quantity: 0 }])
@@ -70,7 +70,7 @@ export default function DeliveriesTab() {
         fetchProducts()
         fetchDeliveries()
       }
-    } catch (err) {
+    } catch {
       console.error('Failed to record delivery')
       showToast('Failed to record delivery', 'error')
     }
