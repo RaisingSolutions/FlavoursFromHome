@@ -326,10 +326,22 @@ export const markAsDelivered = async (req: Request, res: Response) => {
       .from('orders')
       .update({ status: 'delivered' })
       .eq('id', id)
-      .select()
+      .select('id, email, first_name')
       .single();
 
     if (error) throw error;
+
+    // Send feedback request email
+    try {
+      const { sendFeedbackRequestEmail } = await import('../utils/email');
+      await sendFeedbackRequestEmail(data.email, {
+        orderId: data.id,
+        firstName: data.first_name
+      });
+      console.log('Feedback email sent to:', data.email);
+    } catch (emailError) {
+      console.error('Failed to send feedback email:', emailError);
+    }
 
     res.json(data);
   } catch (error) {
