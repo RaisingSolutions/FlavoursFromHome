@@ -4,7 +4,9 @@ import { sendWhatsAppMessage } from '../utils/whatsapp';
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const isAdmin = req.query.admin === 'true';
+    
+    let query = supabase
       .from('products')
       .select(`
         id,
@@ -15,11 +17,19 @@ export const getAllProducts = async (req: Request, res: Response) => {
         image_url,
         category_id,
         inventory,
+        is_active,
+        has_limit,
+        max_per_order,
         categories (
           name
         )
-      `)
-      .eq('is_active', true);
+      `);
+    
+    if (!isAdmin) {
+      query = query.eq('is_active', true);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -120,7 +130,7 @@ export const getProductsByCategory = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { name, description, price, category_id, weight, image_url, inventory } = req.body;
+    const { name, description, price, category_id, weight, image_url, inventory, has_limit, max_per_order } = req.body;
     
     const { data, error } = await supabase
       .from('products')
@@ -131,7 +141,9 @@ export const createProduct = async (req: Request, res: Response) => {
         category_id,
         weight,
         image_url,
-        inventory: inventory || 0
+        inventory: inventory || 0,
+        has_limit: has_limit || false,
+        max_per_order: max_per_order || null
       })
       .select()
       .single();
@@ -147,7 +159,7 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, price, category_id, weight, image_url, inventory } = req.body;
+    const { name, description, price, category_id, weight, image_url, inventory, has_limit, max_per_order } = req.body;
     
     const { data, error } = await supabase
       .from('products')
@@ -159,6 +171,8 @@ export const updateProduct = async (req: Request, res: Response) => {
         weight,
         image_url,
         inventory,
+        has_limit,
+        max_per_order,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)

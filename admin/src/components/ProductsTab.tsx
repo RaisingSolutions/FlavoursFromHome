@@ -7,7 +7,7 @@ export default function ProductsTab() {
   const [categories, setCategories] = useState([])
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '' })
+  const [formData, setFormData] = useState({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '', has_limit: false, max_per_order: '' })
 
   const fetchProducts = async () => {
     try {
@@ -41,10 +41,12 @@ export default function ProductsTab() {
         formData.weight,
         parseInt(formData.category_id),
         formData.image_url,
-        parseInt(formData.inventory)
+        parseInt(formData.inventory),
+        formData.has_limit,
+        formData.max_per_order ? parseInt(formData.max_per_order) : null
       )
       if (success) {
-        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '' })
+        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '', has_limit: false, max_per_order: '' })
         setShowCreateForm(false)
         fetchProducts()
       }
@@ -62,7 +64,9 @@ export default function ProductsTab() {
       weight: item.weight || '',
       category_id: item.category_id?.toString() || '',
       image_url: item.image_url || '',
-      inventory: item.inventory?.toString() || '0'
+      inventory: item.inventory?.toString() || '0',
+      has_limit: item.has_limit || false,
+      max_per_order: item.max_per_order?.toString() || ''
     })
     setShowCreateForm(true)
   }
@@ -77,10 +81,12 @@ export default function ProductsTab() {
         formData.weight,
         parseInt(formData.category_id),
         formData.image_url,
-        parseInt(formData.inventory)
+        parseInt(formData.inventory),
+        formData.has_limit,
+        formData.max_per_order ? parseInt(formData.max_per_order) : null
       )
       if (success) {
-        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '' })
+        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '', has_limit: false, max_per_order: '' })
         setShowCreateForm(false)
         setEditingItem(null)
         fetchProducts()
@@ -107,7 +113,7 @@ export default function ProductsTab() {
         <button className="create-btn" onClick={() => {
           setShowCreateForm(true)
           setEditingItem(null)
-          setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '' })
+          setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '', has_limit: false, max_per_order: '' })
         }}>Create Product</button>
       </div>
       
@@ -159,6 +165,26 @@ export default function ProductsTab() {
             value={formData.image_url}
             onChange={(e) => setFormData({...formData, image_url: e.target.value})}
           />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="checkbox"
+                checked={formData.has_limit}
+                onChange={(e) => setFormData({...formData, has_limit: e.target.checked})}
+              />
+              <span>Limit quantity per order</span>
+            </label>
+            {formData.has_limit && (
+              <input
+                type="number"
+                min="1"
+                placeholder="Max per order"
+                value={formData.max_per_order || ''}
+                onChange={(e) => setFormData({...formData, max_per_order: e.target.value})}
+                style={{ width: '150px' }}
+              />
+            )}
+          </div>
           <div className="form-actions">
             <button className="create-btn" onClick={editingItem ? handleUpdate : handleCreateProduct}>
               {editingItem ? 'Update' : 'Create'}
@@ -166,7 +192,7 @@ export default function ProductsTab() {
             <button className="cancel-btn" onClick={() => {
               setShowCreateForm(false)
               setEditingItem(null)
-              setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '' })
+              setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '', has_limit: false, max_per_order: '' })
             }}>Cancel</button>
           </div>
         </div>
@@ -198,7 +224,8 @@ export default function ProductsTab() {
                   type="checkbox"
                   checked={product.is_active}
                   onChange={async () => {
-                    await API.toggleProductStatus(product.id, !product.is_active)
+                    const newStatus = !product.is_active
+                    await API.toggleProductStatus(product.id, newStatus)
                     fetchProducts()
                   }}
                 />

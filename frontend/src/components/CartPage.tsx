@@ -4,6 +4,8 @@ interface CartItem {
   price: number
   quantity: number
   image_url?: string
+  has_limit?: boolean
+  max_per_order?: number
 }
 
 interface CartPageProps {
@@ -12,6 +14,7 @@ interface CartPageProps {
   onUpdateQuantity: (productId: number, change: number) => void
   onContinueShopping: () => void
   onCheckout: () => void
+  onShowToast: (message: string, type: 'success' | 'error') => void
 }
 
 export default function CartPage({ 
@@ -19,7 +22,8 @@ export default function CartPage({
   cartCount, 
   onUpdateQuantity, 
   onContinueShopping,
-  onCheckout
+  onCheckout,
+  onShowToast
 }: CartPageProps) {
   const getCartTotal = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)
@@ -66,7 +70,13 @@ export default function CartPage({
                   <span className="quantity">{item.quantity}</span>
                   <button 
                     className="qty-btn"
-                    onClick={() => onUpdateQuantity(item.id, 1)}
+                    onClick={() => {
+                      if (item.has_limit && item.quantity >= (item.max_per_order || 0)) {
+                        onShowToast(`Max ${item.max_per_order} ${item.name} per order`, 'error')
+                      } else {
+                        onUpdateQuantity(item.id, 1)
+                      }
+                    }}
                   >
                     +
                   </button>

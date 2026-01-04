@@ -6,6 +6,7 @@ interface HomePageProps {
   onCategoryFilter: (categoryId: number | null) => void
   onAddToCart: (product: any) => void
   onUpdateQuantity: (productId: number, change: number) => void
+  onShowToast: (message: string, type: 'success' | 'error') => void
 }
 
 export default function HomePage({ 
@@ -15,7 +16,8 @@ export default function HomePage({
   cart,
   onCategoryFilter, 
   onAddToCart,
-  onUpdateQuantity
+  onUpdateQuantity,
+  onShowToast
 }: HomePageProps) {
   return (
     <>
@@ -119,7 +121,14 @@ export default function HomePage({
                     </span>
                     <button 
                       className="qty-btn"
-                      onClick={() => onUpdateQuantity(product.id, 1)}
+                      onClick={() => {
+                        const item = cart.find(i => i.id === product.id)
+                        if (product.has_limit && item && item.quantity >= product.max_per_order) {
+                          onShowToast(`Max ${product.max_per_order} ${product.name} per order`, 'error')
+                        } else {
+                          onUpdateQuantity(product.id, 1)
+                        }
+                      }}
                       disabled={cart.find(item => item.id === product.id)?.quantity >= product.inventory}
                     >
                       +

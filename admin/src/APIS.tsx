@@ -173,24 +173,24 @@ export const markAsDelivered = async (orderId: number) => {
 
 // Product APIs
 export const fetchProducts = async () => {
-  const response = await fetch(`${BASE_URL}/products`)
+  const response = await fetch(`${BASE_URL}/products?admin=true`)
   return response.json()
 }
 
-export const createProduct = async (name: string, description: string, price: number, weight: string, category_id: number, image_url: string, inventory: number) => {
+export const createProduct = async (name: string, description: string, price: number, weight: string, category_id: number, image_url: string, inventory: number, has_limit: boolean, max_per_order: number | null) => {
   const response = await fetch(`${BASE_URL}/products`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, description, price, weight, category_id, image_url, inventory }),
+    body: JSON.stringify({ name, description, price, weight, category_id, image_url, inventory, has_limit, max_per_order }),
   })
   return response.ok
 }
 
-export const updateProduct = async (id: number, name: string, description: string, price: number, weight: string, category_id: number, image_url: string, inventory: number) => {
+export const updateProduct = async (id: number, name: string, description: string, price: number, weight: string, category_id: number, image_url: string, inventory: number, has_limit: boolean, max_per_order: number | null) => {
   const response = await fetch(`${BASE_URL}/products/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, description, price, weight, category_id, image_url, inventory }),
+    body: JSON.stringify({ name, description, price, weight, category_id, image_url, inventory, has_limit, max_per_order }),
   })
   return response.ok
 }

@@ -14,12 +14,15 @@ interface CartItem {
   price: number
   quantity: number
   image_url?: string
+  has_limit?: boolean
+  max_per_order?: number
 }
 
 function App() {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('cart')
     const timestamp = localStorage.getItem('cartTimestamp')
@@ -45,7 +48,6 @@ function App() {
     if (params.get('success') === 'true') return 'success'
     return 'home'
   })
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -110,9 +112,14 @@ function App() {
       const existingItem = prevCart.find(item => item.id === product.id)
       
       if (existingItem) {
+        const newQty = existingItem.quantity + 1
+        if (product.has_limit && newQty > product.max_per_order) {
+          setToast({ message: `Max ${product.max_per_order} ${product.name} per order`, type: 'error' })
+          return prevCart
+        }
         return prevCart.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: newQty }
             : item
         )
       } else {
@@ -121,7 +128,9 @@ function App() {
           name: product.name,
           price: product.price,
           quantity: 1,
-          image_url: product.image_url
+          image_url: product.image_url,
+          has_limit: product.has_limit,
+          max_per_order: product.max_per_order
         }]
       }
     })
@@ -132,6 +141,10 @@ function App() {
       return prevCart.map(item => {
         if (item.id === productId) {
           const newQuantity = item.quantity + change
+          if (change > 0 && item.has_limit && newQuantity > (item.max_per_order || 0)) {
+            setToast({ message: `Max ${item.max_per_order} ${item.name} per order`, type: 'error' })
+            return item
+          }
           return newQuantity > 0 ? { ...item, quantity: newQuantity } : null
         }
         return item
@@ -179,6 +192,7 @@ function App() {
               onUpdateQuantity={updateQuantity}
               onContinueShopping={() => setCurrentPage('home')}
               onCheckout={() => setCurrentPage('checkout')}
+              onShowToast={(message, type) => setToast({ message, type })}
             />
           ) : (
             <HomePage 
@@ -189,6 +203,7 @@ function App() {
               onCategoryFilter={handleCategoryFilter}
               onAddToCart={addToCart}
               onUpdateQuantity={updateQuantity}
+              onShowToast={(message, type) => setToast({ message, type })}
             />
           )}
         </main>
