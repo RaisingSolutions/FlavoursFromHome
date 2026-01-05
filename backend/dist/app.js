@@ -5,6 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
+const swagger_1 = require("./swagger");
 const testRoutes_1 = __importDefault(require("./routes/testRoutes"));
 const productRoutes_1 = __importDefault(require("./routes/productRoutes"));
 const categoryRoutes_1 = __importDefault(require("./routes/categoryRoutes"));
@@ -20,6 +22,11 @@ app.use((0, cors_1.default)({ origin: corsOrigin }));
 // Stripe webhook needs raw body
 app.use('/api/payment/webhook', express_1.default.raw({ type: 'application/json' }));
 app.use(express_1.default.json());
+// Swagger Documentation
+app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Flavours From Home API Docs'
+}));
 // Routes
 app.use('/api', testRoutes_1.default);
 app.use('/api/products', productRoutes_1.default);

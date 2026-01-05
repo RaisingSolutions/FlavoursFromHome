@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCategory = exports.updateCategory = exports.createCategory = exports.getAllCategories = void 0;
+exports.toggleCategoryStatus = exports.deleteCategory = exports.updateCategory = exports.createCategory = exports.getAllCategories = void 0;
 const supabase_1 = require("../utils/supabase");
 const getAllCategories = async (req, res) => {
     try {
         const { data, error } = await supabase_1.supabase
             .from('categories')
-            .select('id, name, description, image_url')
+            .select('id, name, description, image_url, is_active')
+            .eq('is_active', true)
             .order('name');
         if (error)
             throw error;
@@ -78,3 +79,20 @@ const deleteCategory = async (req, res) => {
     }
 };
 exports.deleteCategory = deleteCategory;
+const toggleCategoryStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { is_active } = req.body;
+        const { error } = await supabase_1.supabase
+            .from('categories')
+            .update({ is_active })
+            .eq('id', id);
+        if (error)
+            throw error;
+        res.json({ success: true });
+    }
+    catch (error) {
+        res.status(400).json({ error: 'Failed to toggle category status' });
+    }
+};
+exports.toggleCategoryStatus = toggleCategoryStatus;

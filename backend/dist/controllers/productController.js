@@ -1,11 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDeliveries = exports.recordDelivery = exports.deleteProduct = exports.updateProduct = exports.createProduct = exports.getProductsByCategory = exports.getProductById = exports.getAllProducts = void 0;
+exports.getDeliveries = exports.recordDelivery = exports.toggleProductStatus = exports.deleteProduct = exports.updateProduct = exports.createProduct = exports.getProductsByCategory = exports.getProductById = exports.getAllProducts = void 0;
 const supabase_1 = require("../utils/supabase");
 const whatsapp_1 = require("../utils/whatsapp");
 const getAllProducts = async (req, res) => {
     try {
-        const { data, error } = await supabase_1.supabase
+        const isAdmin = req.query.admin === 'true';
+        let query = supabase_1.supabase
             .from('products')
             .select(`
         id,
@@ -16,14 +17,47 @@ const getAllProducts = async (req, res) => {
         image_url,
         category_id,
         inventory,
+        is_active,
+        has_limit,
+        max_per_order,
         categories (
           name
         )
-      `)
-            .eq('is_active', true);
+      `);
+        if (!isAdmin) {
+            query = query.eq('is_active', true);
+        }
+        const { data, error } = await query;
         if (error)
             throw error;
-        res.json(data);
+        // Get all feedbacks
+        const { data: feedbacks } = await supabase_1.supabase
+            .from('feedbacks')
+            .select('product_ratings');
+        // Calculate average ratings per product
+        const ratings = {};
+        feedbacks?.forEach((fb) => {
+            Object.entries(fb.product_ratings).forEach(([productId, data]) => {
+                const id = parseInt(productId);
+                if (!ratings[id])
+                    ratings[id] = { total: 0, count: 0 };
+                ratings[id].total += data.rating;
+                ratings[id].count += 1;
+            });
+        });
+        // Product 15 uses product 14's rating
+        if (ratings[14]) {
+            ratings[15] = ratings[14];
+        }
+        // Add average rating to products
+        const productsWithRatings = data.map(product => ({
+            ...product,
+            average_rating: ratings[product.id]
+                ? parseFloat((ratings[product.id].total / ratings[product.id].count).toFixed(1))
+                : null,
+            rating_count: ratings[product.id]?.count || 0
+        }));
+        res.json(productsWithRatings);
     }
     catch (error) {
         res.status(500).json({ error: 'Failed to fetch products' });
@@ -89,7 +123,7 @@ const getProductsByCategory = async (req, res) => {
 exports.getProductsByCategory = getProductsByCategory;
 const createProduct = async (req, res) => {
     try {
-        const { name, description, price, category_id, weight, image_url, inventory } = req.body;
+        const { name, description, price, category_id, weight, image_url, inventory, has_limit, max_per_order } = req.body;
         const { data, error } = await supabase_1.supabase
             .from('products')
             .insert({
@@ -99,7 +133,9 @@ const createProduct = async (req, res) => {
             category_id,
             weight,
             image_url,
-            inventory: inventory || 0
+            inventory: inventory || 0,
+            has_limit: has_limit || false,
+            max_per_order: max_per_order || null
         })
             .select()
             .single();
@@ -115,7 +151,7 @@ exports.createProduct = createProduct;
 const updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, price, category_id, weight, image_url, inventory } = req.body;
+        const { name, description, price, category_id, weight, image_url, inventory, has_limit, max_per_order } = req.body;
         const { data, error } = await supabase_1.supabase
             .from('products')
             .update({
@@ -126,6 +162,8 @@ const updateProduct = async (req, res) => {
             weight,
             image_url,
             inventory,
+            has_limit,
+            max_per_order,
             updated_at: new Date().toISOString()
         })
             .eq('id', id)
@@ -164,6 +202,23 @@ const deleteProduct = async (req, res) => {
     }
 };
 exports.deleteProduct = deleteProduct;
+const toggleProductStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { is_active } = req.body;
+        const { error } = await supabase_1.supabase
+            .from('products')
+            .update({ is_active })
+            .eq('id', id);
+        if (error)
+            throw error;
+        res.json({ success: true });
+    }
+    catch (error) {
+        res.status(400).json({ error: 'Failed to toggle product status' });
+    }
+};
+exports.toggleProductStatus = toggleProductStatus;
 const recordDelivery = async (req, res) => {
     try {
         const { deliveryDate, items } = req.body;

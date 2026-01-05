@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger';
 import testRoutes from './routes/testRoutes';
 import productRoutes from './routes/productRoutes';
 import categoryRoutes from './routes/categoryRoutes';
@@ -19,6 +21,12 @@ app.use(cors({ origin: corsOrigin }));
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 
 app.use(express.json());
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Flavours From Home API Docs'
+}));
 
 // Routes
 app.use('/api', testRoutes);

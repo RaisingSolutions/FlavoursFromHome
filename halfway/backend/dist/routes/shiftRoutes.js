@@ -1,8 +1,11 @@
-import express from 'express';
-import { createShift, getShifts, getUserShifts } from '../controllers/shiftController';
-
-const router = express.Router();
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const shiftController_1 = require("../controllers/shiftController");
+const router = express_1.default.Router();
 /**
  * @swagger
  * /api/shifts:
@@ -40,8 +43,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Shift'
  */
-router.post('/', createShift);
-
+router.post('/', shiftController_1.createShift);
 /**
  * @swagger
  * /api/shifts:
@@ -58,8 +60,7 @@ router.post('/', createShift);
  *               items:
  *                 $ref: '#/components/schemas/Shift'
  */
-router.get('/', getShifts);
-
+router.get('/', shiftController_1.getShifts);
 /**
  * @swagger
  * /api/shifts/user/{userId}:
@@ -82,6 +83,5 @@ router.get('/', getShifts);
  *               items:
  *                 $ref: '#/components/schemas/Shift'
  */
-router.get('/user/:userId', getUserShifts);
-
-export default router;
+router.get('/user/:userId', shiftController_1.getUserShifts);
+exports.default = router;

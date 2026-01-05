@@ -1,0 +1,430 @@
+{
+  "info": {
+    "name": "Flavours From Home - Complete API",
+    "description": "Complete API collection for Flavours From Home platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "halfwayUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Main API",
+      "item": [
+        {
+          "name": "Test",
+          "item": [
+            {
+              "name": "API Status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/status",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "status"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Products",
+          "item": [
+            {
+              "name": "Get All Products",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "products"]
+                }
+              }
+            },
+            {
+              "name": "Get Product by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/1",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "products", "1"]
+                }
+              }
+            },
+            {
+              "name": "Create Product",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Test Product\",\n  \"description\": \"Test Description\",\n  \"price\": 12.99,\n  \"category_id\": 1,\n  \"weight\": \"500g\",\n  \"image_url\": \"https://example.com/image.jpg\",\n  \"inventory\": 50,\n  \"has_limit\": true,\n  \"max_per_order\": 5\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/products",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "products"]
+                }
+              }
+            },
+            {
+              "name": "Update Product",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Product\",\n  \"price\": 15.99,\n  \"inventory\": 100\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/products/1",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "products", "1"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Categories",
+          "item": [
+            {
+              "name": "Get All Categories",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories"]
+                }
+              }
+            },
+            {
+              "name": "Create Category",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"New Category\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orders",
+          "item": [
+            {
+              "name": "Get All Orders",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "orders"]
+                }
+              }
+            },
+            {
+              "name": "Create Order",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"first_name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone_number\": \"+447123456789\",\n  \"address\": \"123 Main St, London\",\n  \"payment_method\": \"CASH\",\n  \"total_amount\": 45.99,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 2\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "orders"]
+                }
+              }
+            },
+            {
+              "name": "Update Order Status",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"confirmed\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/1/status",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "orders", "1", "status"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin",
+          "item": [
+            {
+              "name": "Admin Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "login"]
+                }
+              }
+            },
+            {
+              "name": "Get All Admins",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "users"]
+                }
+              }
+            },
+            {
+              "name": "Get Drivers",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/drivers",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "admin", "drivers"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Feedback",
+          "item": [
+            {
+              "name": "Get Order for Feedback",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/feedback/order/1",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "feedback", "order", "1"]
+                }
+              }
+            },
+            {
+              "name": "Submit Feedback",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"order_id\": 1,\n  \"overall_rating\": 5,\n  \"product_ratings\": {\n    \"1\": {\n      \"rating\": 5,\n      \"comment\": \"Excellent!\"\n    }\n  },\n  \"comments\": \"Great service\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/feedback/submit",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "feedback", "submit"]
+                }
+              }
+            },
+            {
+              "name": "Get All Feedbacks",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/feedback/all",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "feedback", "all"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Halfway API",
+      "item": [
+        {
+          "name": "Auth",
+          "item": [
+            {
+              "name": "Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"user\",\n  \"password\": \"password\"\n}"
+                },
+                "url": {
+                  "raw": "{{halfwayUrl}}/api/auth/login",
+                  "host": ["{{halfwayUrl}}"],
+                  "path": ["api", "auth", "login"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Users",
+          "item": [
+            {
+              "name": "Get All Users",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{halfwayUrl}}/api/users",
+                  "host": ["{{halfwayUrl}}"],
+                  "path": ["api", "users"]
+                }
+              }
+            },
+            {
+              "name": "Create User",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"newuser\",\n  \"password\": \"password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{halfwayUrl}}/api/users",
+                  "host": ["{{halfwayUrl}}"],
+                  "path": ["api", "users"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Shifts",
+          "item": [
+            {
+              "name": "Get All Shifts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{halfwayUrl}}/api/shifts",
+                  "host": ["{{halfwayUrl}}"],
+                  "path": ["api", "shifts"]
+                }
+              }
+            },
+            {
+              "name": "Create Shift",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_id\": 1,\n  \"shift_date\": \"2024-01-15\",\n  \"start_time\": \"09:00\",\n  \"end_time\": \"17:00\"\n}"
+                },
+                "url": {
+                  "raw": "{{halfwayUrl}}/api/shifts",
+                  "host": ["{{halfwayUrl}}"],
+                  "path": ["api", "shifts"]
+                }
+              }
+            },
+            {
+              "name": "Get User Shifts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{halfwayUrl}}/api/shifts/user/1",
+                  "host": ["{{halfwayUrl}}"],
+                  "path": ["api", "shifts", "user", "1"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

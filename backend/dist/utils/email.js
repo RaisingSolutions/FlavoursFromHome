@@ -98,7 +98,7 @@ const sendFeedbackRequestEmail = async (to, orderDetails) => {
         await transporter.sendMail({
             from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
             to: to,
-            subject: `Order Delivered! Get £5 Off Your Next Order - Flavours From Home`,
+            subject: `Order Delivered! Get £2 Off Your Next Order - Flavours From Home`,
             html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #2c5f2d;">✅ Order #${orderId} Delivered!</h1>
@@ -106,8 +106,8 @@ const sendFeedbackRequestEmail = async (to, orderDetails) => {
           <p>We hope you enjoyed your order! Your feedback helps us serve you better.</p>
           
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; margin: 30px 0; text-align: center; color: white;">
-            <h2 style="margin: 0 0 15px 0; font-size: 28px;">🎁 Get £5 Off!</h2>
-            <p style="font-size: 18px; margin: 0 0 25px 0;">Share your feedback and receive a £5 voucher for your next order</p>
+            <h2 style="margin: 0 0 15px 0; font-size: 28px;">🎁 Get £2 Off!</h2>
+            <p style="font-size: 18px; margin: 0 0 25px 0;">Share your feedback and receive a £2 voucher for your next order</p>
             <a href="${feedbackUrl}" style="display: inline-block; background: white; color: #667eea; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px;">
               Leave Feedback Now
             </a>
@@ -135,7 +135,7 @@ const sendCouponEmail = async (to, details) => {
         await transporter.sendMail({
             from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
             to: to,
-            subject: `Your £5 Voucher Code - Flavours From Home`,
+            subject: `Your £2 Voucher Code - Flavours From Home`,
             html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #2c5f2d;">🎉 Thank You for Your Feedback!</h1>
@@ -143,14 +143,14 @@ const sendCouponEmail = async (to, details) => {
           <p>We really appreciate you taking the time to share your thoughts with us!</p>
           
           <div style="background: #f0f8ff; padding: 30px; border-radius: 12px; margin: 30px 0; text-align: center; border: 3px dashed #667eea;">
-            <h2 style="margin: 0 0 15px 0; color: #667eea;">Your £5 Voucher Code</h2>
+            <h2 style="margin: 0 0 15px 0; color: #667eea;">Your £2 Voucher Code</h2>
             <div style="background: white; padding: 20px; border-radius: 8px; font-size: 32px; font-weight: bold; letter-spacing: 3px; color: #2c5f2d; margin: 20px 0;">
               ${couponCode}
             </div>
             <p style="color: #666; margin: 0;">Use this code at checkout on your next order!</p>
           </div>
           
-          <p>This voucher gives you £5 off your next order. Simply enter the code at checkout.</p>
+          <p>This voucher gives you £2 off your next order. Simply enter the code at checkout.</p>
           
           <p style="margin-top: 30px;">
             Best regards,<br>

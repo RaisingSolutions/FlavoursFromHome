@@ -1,8 +1,11 @@
-import express from 'express';
-import { createUser, getUsers, updatePassword, deleteUser } from '../controllers/userController';
-
-const router = express.Router();
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const userController_1 = require("../controllers/userController");
+const router = express_1.default.Router();
 /**
  * @swagger
  * /api/users:
@@ -31,8 +34,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/User'
  */
-router.post('/', createUser);
-
+router.post('/', userController_1.createUser);
 /**
  * @swagger
  * /api/users:
@@ -49,8 +51,7 @@ router.post('/', createUser);
  *               items:
  *                 $ref: '#/components/schemas/User'
  */
-router.get('/', getUsers);
-
+router.get('/', userController_1.getUsers);
 /**
  * @swagger
  * /api/users/{id}/password:
@@ -78,8 +79,7 @@ router.get('/', getUsers);
  *       200:
  *         description: Password updated
  */
-router.put('/:id/password', updatePassword);
-
+router.put('/:id/password', userController_1.updatePassword);
 /**
  * @swagger
  * /api/users/{id}:
@@ -96,6 +96,5 @@ router.put('/:id/password', updatePassword);
  *       200:
  *         description: User deleted
  */
-router.delete('/:id', deleteUser);
-
-export default router;
+router.delete('/:id', userController_1.deleteUser);
+exports.default = router;

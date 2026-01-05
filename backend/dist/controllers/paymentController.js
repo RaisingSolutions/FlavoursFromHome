@@ -3,26 +3,62 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleWebhook = exports.createCheckoutSession = void 0;
+exports.handleWebhook = exports.createCheckoutSession = exports.verifyCoupon = void 0;
 const stripe_1 = __importDefault(require("stripe"));
 const supabase_1 = require("../utils/supabase");
 const whatsapp_1 = require("../utils/whatsapp");
 const email_1 = require("../utils/email");
 const stripe = new stripe_1.default(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-11-17.clover' });
+const verifyCoupon = async (req, res) => {
+    try {
+        const { code } = req.body;
+        const { data: coupon, error } = await supabase_1.supabase
+            .from('coupons')
+            .select('code, amount, used, expires_at')
+            .eq('code', code)
+            .single();
+        if (error || !coupon) {
+            return res.status(404).json({ error: 'Invalid coupon code' });
+        }
+        if (coupon.used) {
+            return res.status(400).json({ error: 'Coupon already used' });
+        }
+        if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+            return res.status(400).json({ error: 'Coupon expired' });
+        }
+        res.json({ code: coupon.code, amount: coupon.amount });
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to verify coupon' });
+    }
+};
+exports.verifyCoupon = verifyCoupon;
 const createCheckoutSession = async (req, res) => {
     try {
-        const { cart, customerInfo } = req.body;
-        const lineItems = cart.map((item) => ({
-            price_data: {
-                currency: 'gbp',
-                product_data: {
-                    name: item.name,
-                    images: item.image_url ? [item.image_url] : [],
+        const { cart, customerInfo, couponCode } = req.body;
+        let discount = 0;
+        if (couponCode) {
+            const { data: coupon } = await supabase_1.supabase
+                .from('coupons')
+                .select('amount, used')
+                .eq('code', couponCode)
+                .single();
+            if (coupon && !coupon.used) {
+                discount = coupon.amount;
+            }
+        }
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const finalTotal = Math.max(0, subtotal - discount);
+        const lineItems = [{
+                price_data: {
+                    currency: 'gbp',
+                    product_data: {
+                        name: discount > 0 ? `Order Total (${discount} discount applied)` : 'Order Total',
+                    },
+                    unit_amount: Math.round(finalTotal * 100),
                 },
-                unit_amount: Math.round(item.price * 100),
-            },
-            quantity: item.quantity,
-        }));
+                quantity: 1,
+            }];
         const cartData = cart.map((item) => ({
             id: item.id,
             name: item.name,
@@ -42,6 +78,7 @@ const createCheckoutSession = async (req, res) => {
                 address: customerInfo.address,
                 orderType: customerInfo.orderType,
                 cartData: JSON.stringify(cartData),
+                couponCode: couponCode || '',
             },
         });
         res.json({ sessionId: session.id, url: session.url });
@@ -67,6 +104,7 @@ const handleWebhook = async (req, res) => {
             const phoneNumber = session.metadata.phoneNumber;
             const address = session.metadata.address;
             const cart = JSON.parse(session.metadata.cartData);
+            const couponCode = session.metadata.couponCode;
             const totalAmount = session.amount_total / 100;
             console.log('Creating order for:', firstName, email);
             const { data: order, error } = await supabase_1.supabase
@@ -96,6 +134,13 @@ const handleWebhook = async (req, res) => {
             }));
             await supabase_1.supabase.from('order_items').insert(orderItems);
             console.log('Order items created');
+            // Mark coupon as used
+            if (couponCode) {
+                await supabase_1.supabase
+                    .from('coupons')
+                    .update({ used: true })
+                    .eq('code', couponCode);
+            }
             // Decrease inventory for each product
             for (const item of cart) {
                 const { data: product } = await supabase_1.supabase
