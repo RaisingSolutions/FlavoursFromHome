@@ -14,12 +14,12 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3001',
-        description: 'Development server'
+        url: 'https://flavours-from-home.co.uk/halfway',
+        description: 'Production server'
       },
       {
-        url: 'https://halfway.flavoursfromhome.com',
-        description: 'Production server'
+        url: 'http://localhost:3001',
+        description: 'Development server'
       }
     ],
     components: {
