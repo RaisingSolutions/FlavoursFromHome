@@ -26,6 +26,9 @@ export default function CheckoutPage({
   const [email, setEmail] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [address, setAddress] = useState('')
+  const [postcode, setPostcode] = useState('')
+  const [addresses, setAddresses] = useState<string[]>([])
+  const [searchingAddress, setSearchingAddress] = useState(false)
   const [orderType, setOrderType] = useState<'delivery' | 'collection'>('delivery')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [couponCode, setCouponCode] = useState('')
@@ -66,6 +69,49 @@ export default function CheckoutPage({
     }
   }
 
+  const isValidPostcode = (pc: string) => {
+    const cleaned = pc.toUpperCase().replace(/\s/g, '')
+    return cleaned.startsWith('LS') || cleaned.startsWith('DE') || cleaned.startsWith('S')
+  }
+
+  const handleSearchAddress = async () => {
+    if (!postcode.trim()) {
+      onShowToast('Please enter a postcode', 'error')
+      return
+    }
+
+    if (!isValidPostcode(postcode)) {
+      onShowToast('We only deliver to Leeds (LS), Derby (DE), and Sheffield (S) postcodes', 'error')
+      return
+    }
+
+    setSearchingAddress(true)
+    try {
+      // Using getAddress.io API - you need to add your API key in .env
+      const apiKey = import.meta.env.VITE_GETADDRESS_API_KEY || 'demo'
+      const response = await fetch(`https://api.getAddress.io/find/${postcode.replace(/\s/g, '')}?api-key=${apiKey}&expand=true`)
+      const data = await response.json()
+      console.log('Address API response:', data)
+      
+      if (response.ok && data.addresses && data.addresses.length > 0) {
+        const addressList = data.addresses.map((addr: any) => 
+          `${addr.line_1}${addr.line_2 ? ', ' + addr.line_2 : ''}, ${addr.town_or_city}, ${postcode.toUpperCase()}`
+        )
+        console.log('Address list:', addressList)
+        setAddresses(addressList)
+        setAddress(addressList[0])
+        onShowToast(`Found ${addressList.length} addresses`, 'success')
+      } else {
+        onShowToast('No addresses found for this postcode', 'error')
+      }
+    } catch (err) {
+      console.error('Address search error:', err)
+      onShowToast('Failed to search address', 'error')
+    } finally {
+      setSearchingAddress(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -90,8 +136,6 @@ export default function CheckoutPage({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cart, customerInfo, couponCode: appliedCoupon?.code })
       })
-
-      if (!response.ok) throw new Error('Failed to create checkout session')
 
       const { url } = await response.json()
       window.location.href = url
@@ -178,16 +222,47 @@ export default function CheckoutPage({
             </div>
 
             {orderType === 'delivery' && (
-              <div className="form-group">
-                <label htmlFor="address">Delivery Address *</label>
-                <textarea
-                  id="address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  rows={3}
-                  required
-                />
-              </div>
+              <>
+                <div className="form-group">
+                  <label htmlFor="postcode">Postcode *</label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input
+                      type="text"
+                      id="postcode"
+                      value={postcode}
+                      onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+                      placeholder="e.g. LS17 8RX, DE1 1AA, S1 1AA"
+                      style={{ flex: 1 }}
+                    />
+                    <button 
+                      type="button" 
+                      className="btn-primary"
+                      onClick={handleSearchAddress}
+                      disabled={searchingAddress}
+                    >
+                      {searchingAddress ? 'Searching...' : 'Search'}
+                    </button>
+                  </div>
+                  <small style={{ color: '#666', fontSize: '0.85rem' }}>We deliver to Leeds (LS), Derby (DE), and Sheffield (S) only</small>
+                </div>
+
+                {addresses.length > 0 && (
+                  <div className="form-group">
+                    <label htmlFor="address">Select Your Address *</label>
+                    <select
+                      id="address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      required
+                      style={{ width: '100%', padding: '12px' }}
+                    >
+                      {addresses.map((addr, idx) => (
+                        <option key={idx} value={addr}>{addr}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </>
             )}
             {orderType === 'collection' && (
               <div className="info-card" style={{ marginTop: '1rem' }}>

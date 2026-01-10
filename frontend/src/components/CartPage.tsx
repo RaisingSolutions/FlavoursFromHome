@@ -31,9 +31,7 @@ export default function CartPage({
   onAddFreeRegipallu
 }: CartPageProps) {
   const [showRegipalluPrompt, setShowRegipalluPrompt] = useState(false)
-  const [regipalluOffered, setRegipalluOffered] = useState(() => {
-    return localStorage.getItem('regipalluOffered') === 'true'
-  })
+  const [regipalluOffered, setRegipalluOffered] = useState(false)
 
   const getCartTotal = () => {
     return cart.reduce((total, item) => {
@@ -43,12 +41,13 @@ export default function CartPage({
   }
 
   const cartTotal = parseFloat(getCartTotal())
+  const hasRegipallu = cart.some(item => item.name.toLowerCase().replace(/\s/g, '').includes('regipallu'))
 
   useEffect(() => {
-    if (cartTotal >= 30 && !regipalluOffered && cart.length > 0) {
+    if (cartTotal >= 30 && !regipalluOffered && !hasRegipallu && cart.length > 0) {
       setShowRegipalluPrompt(true)
     }
-  }, [cartTotal, regipalluOffered, cart.length])
+  }, [cartTotal, regipalluOffered, hasRegipallu, cart.length])
 
   useEffect(() => {
     if (cartTotal < 30) {
@@ -56,7 +55,6 @@ export default function CartPage({
       if (freeRegipallu) {
         onUpdateQuantity(freeRegipallu.id, -freeRegipallu.quantity)
         onShowToast('Free Regipallu removed (cart below £30)', 'error')
-        localStorage.removeItem('regipalluOffered')
         setRegipalluOffered(false)
       }
     }
@@ -71,7 +69,6 @@ export default function CartPage({
       if (regipallu && onAddFreeRegipallu) {
         onAddFreeRegipallu({ ...regipallu, isFreeRegipallu: true })
         onShowToast('Free Regipallu added to your cart!', 'success')
-        localStorage.setItem('regipalluOffered', 'true')
       } else {
         onShowToast('Regipallu product not found', 'error')
       }
@@ -116,7 +113,6 @@ export default function CartPage({
                 onClick={() => {
                   setShowRegipalluPrompt(false)
                   setRegipalluOffered(true)
-                  localStorage.setItem('regipalluOffered', 'true')
                 }}
                 style={{ flex: 1 }}
               >
