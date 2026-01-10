@@ -6,6 +6,7 @@ interface CartItem {
   price: number
   quantity: number
   image_url?: string
+  isFreeRegipallu?: boolean
 }
 
 interface CheckoutPageProps {
@@ -31,7 +32,10 @@ export default function CheckoutPage({
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; amount: number } | null>(null)
   const [verifyingCoupon, setVerifyingCoupon] = useState(false)
 
-  const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const totalAmount = cart.reduce((sum, item) => {
+    if (item.isFreeRegipallu) return sum
+    return sum + (item.price * item.quantity)
+  }, 0)
   const discount = appliedCoupon ? appliedCoupon.amount : 0
   const finalAmount = Math.max(0, totalAmount - discount)
   const isDeliveryMinimumMet = finalAmount >= 20
@@ -245,8 +249,11 @@ export default function CheckoutPage({
             <div className="summary-items">
               {cart.map(item => (
                 <div key={item.id} className="summary-item">
-                  <span>{item.name} x{item.quantity}</span>
-                  <span>£{(item.price * item.quantity).toFixed(2)}</span>
+                  <span>
+                    {item.name} x{item.quantity}
+                    {item.isFreeRegipallu && <span style={{ color: '#28a745', fontWeight: 'bold' }}> (FREE)</span>}
+                  </span>
+                  <span>{item.isFreeRegipallu ? '£0.00' : `£${(item.price * item.quantity).toFixed(2)}`}</span>
                 </div>
               ))}
             </div>

@@ -16,6 +16,7 @@ interface CartItem {
   image_url?: string
   has_limit?: boolean
   max_per_order?: number
+  isFreeRegipallu?: boolean
 }
 
 function App() {
@@ -130,7 +131,8 @@ function App() {
           quantity: 1,
           image_url: product.image_url,
           has_limit: product.has_limit,
-          max_per_order: product.max_per_order
+          max_per_order: product.max_per_order,
+          isFreeRegipallu: product.isFreeRegipallu || false
         }]
       }
     })
@@ -193,6 +195,7 @@ function App() {
               onContinueShopping={() => setCurrentPage('home')}
               onCheckout={() => setCurrentPage('checkout')}
               onShowToast={(message, type) => setToast({ message, type })}
+              onAddFreeRegipallu={addToCart}
             />
           ) : (
             <HomePage 

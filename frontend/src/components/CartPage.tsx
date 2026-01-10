@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react'
+
 interface CartItem {
   id: number
   name: string
@@ -6,6 +8,7 @@ interface CartItem {
   image_url?: string
   has_limit?: boolean
   max_per_order?: number
+  isFreeRegipallu?: boolean
 }
 
 interface CartPageProps {
@@ -15,6 +18,7 @@ interface CartPageProps {
   onContinueShopping: () => void
   onCheckout: () => void
   onShowToast: (message: string, type: 'success' | 'error') => void
+  onAddFreeRegipallu?: (regipallu: any) => void
 }
 
 export default function CartPage({ 
@@ -23,14 +27,113 @@ export default function CartPage({
   onUpdateQuantity, 
   onContinueShopping,
   onCheckout,
-  onShowToast
+  onShowToast,
+  onAddFreeRegipallu
 }: CartPageProps) {
+  const [showRegipalluPrompt, setShowRegipalluPrompt] = useState(false)
+  const [regipalluOffered, setRegipalluOffered] = useState(() => {
+    return localStorage.getItem('regipalluOffered') === 'true'
+  })
+
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)
+    return cart.reduce((total, item) => {
+      if (item.isFreeRegipallu) return total
+      return total + (item.price * item.quantity)
+    }, 0).toFixed(2)
+  }
+
+  const cartTotal = parseFloat(getCartTotal())
+
+  useEffect(() => {
+    if (cartTotal >= 30 && !regipalluOffered && cart.length > 0) {
+      setShowRegipalluPrompt(true)
+    }
+  }, [cartTotal, regipalluOffered, cart.length])
+
+  useEffect(() => {
+    if (cartTotal < 30) {
+      const freeRegipallu = cart.find(item => item.isFreeRegipallu)
+      if (freeRegipallu) {
+        onUpdateQuantity(freeRegipallu.id, -freeRegipallu.quantity)
+        onShowToast('Free Regipallu removed (cart below £30)', 'error')
+        localStorage.removeItem('regipalluOffered')
+        setRegipalluOffered(false)
+      }
+    }
+  }, [cartTotal])
+
+  const handleAddFreeRegipallu = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/products`)
+      const products = await response.json()
+      const regipallu = products.find((p: any) => p.name.toLowerCase().replace(/\s/g, '').includes('regipallu'))
+      
+      if (regipallu && onAddFreeRegipallu) {
+        onAddFreeRegipallu({ ...regipallu, isFreeRegipallu: true })
+        onShowToast('Free Regipallu added to your cart!', 'success')
+        localStorage.setItem('regipalluOffered', 'true')
+      } else {
+        onShowToast('Regipallu product not found', 'error')
+      }
+    } catch (err) {
+      console.error('Error:', err)
+      onShowToast('Failed to add free Regipallu', 'error')
+    }
+    setShowRegipalluPrompt(false)
+    setRegipalluOffered(true)
   }
 
   return (
     <section className="cart-page">
+      {showRegipalluPrompt && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '2rem',
+            borderRadius: '1rem',
+            maxWidth: '400px',
+            textAlign: 'center',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+          }}>
+            <h3 style={{ color: '#28a745', marginBottom: '1rem' }}>🎉 Special Offer!</h3>
+            <p style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>
+              Your basket is over £30! Would you like to add a <strong>FREE portion of Regipallu</strong>?
+            </p>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => {
+                  setShowRegipalluPrompt(false)
+                  setRegipalluOffered(true)
+                  localStorage.setItem('regipalluOffered', 'true')
+                }}
+                style={{ flex: 1 }}
+              >
+                No Thanks
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={handleAddFreeRegipallu}
+                style={{ flex: 1 }}
+              >
+                Yes, Add It!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="cart-header">
         <h2>Your Cart</h2>
       </div>
@@ -57,8 +160,11 @@ export default function CartPage({
                   )}
                 </div>
                 <div className="item-details">
-                  <h3>{item.name}</h3>
-                  <p className="item-price">£{item.price}</p>
+                  <h3>
+                    {item.name}
+                    {item.isFreeRegipallu && <span style={{ color: '#28a745', fontWeight: 'bold', marginLeft: '8px' }}>(FREE)</span>}
+                  </h3>
+                  <p className="item-price">{item.isFreeRegipallu ? 'FREE' : `£${item.price}`}</p>
                 </div>
                 <div className="quantity-controls">
                   <button 
@@ -82,7 +188,7 @@ export default function CartPage({
                   </button>
                 </div>
                 <div className="item-total">
-                  £{(item.price * item.quantity).toFixed(2)}
+                  {item.isFreeRegipallu ? 'FREE' : `£${(item.price * item.quantity).toFixed(2)}`}
                 </div>
               </div>
             ))
