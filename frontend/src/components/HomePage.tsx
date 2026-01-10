@@ -27,7 +27,11 @@ export default function HomePage({
         <div className="delivery-info">
           <div className="info-card">
             <span className="info-icon">🚚</span>
-            <p><strong>Free Home Delivery in Leeds</strong><br/>On orders over £20</p>
+            <p><strong>Free Home Delivery in Leeds, Derby & Sheffield</strong><br/>On orders over £20</p>
+          </div>
+          <div className="info-card">
+            <span className="info-icon">🎁</span>
+            <p><strong>Free Regipallu</strong><br/>With orders over £30</p>
           </div>
           <div className="info-card">
             <span className="info-icon">📦</span>

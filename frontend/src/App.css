@@ -115,7 +115,9 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex: 1;
   min-width: 280px;
+  max-width: 350px;
 }
 
 .info-icon {
