@@ -51,7 +51,10 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
       }
     }
 
-    const subtotal = cart.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+    const subtotal = cart.reduce((sum: number, item: any) => {
+      if (item.isFreeRegipallu) return sum;
+      return sum + (item.price * item.quantity);
+    }, 0);
     const finalTotal = Math.max(0, subtotal - discount);
 
     const lineItems = [{
@@ -69,7 +72,8 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
       id: item.id,
       name: item.name,
       price: item.price,
-      quantity: item.quantity
+      quantity: item.quantity,
+      isFreeRegipallu: item.isFreeRegipallu || false
     }));
 
     const session = await stripe.checkout.sessions.create({

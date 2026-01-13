@@ -41,13 +41,13 @@ export default function CartPage({
   }
 
   const cartTotal = parseFloat(getCartTotal())
-  const hasRegipallu = cart.some(item => item.name.toLowerCase().replace(/\s/g, '').includes('regipallu'))
+  const hasFreeRegipallu = cart.some(item => item.isFreeRegipallu)
 
   useEffect(() => {
-    if (cartTotal >= 30 && !regipalluOffered && !hasRegipallu && cart.length > 0) {
+    if (cartTotal >= 30 && !regipalluOffered && !hasFreeRegipallu && cart.length > 0 && !showRegipalluPrompt) {
       setShowRegipalluPrompt(true)
     }
-  }, [cartTotal, regipalluOffered, hasRegipallu, cart.length])
+  }, [cartTotal, regipalluOffered, hasFreeRegipallu, cart.length, showRegipalluPrompt])
 
   useEffect(() => {
     if (cartTotal < 30) {
@@ -56,9 +56,10 @@ export default function CartPage({
         onUpdateQuantity(freeRegipallu.id, -freeRegipallu.quantity)
         onShowToast('Free Regipallu removed (cart below £30)', 'error')
         setRegipalluOffered(false)
+        setShowRegipalluPrompt(false)
       }
     }
-  }, [cartTotal])
+  }, [cartTotal, cart])
 
   const handleAddFreeRegipallu = async () => {
     try {
