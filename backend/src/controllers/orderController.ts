@@ -7,7 +7,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-11
 
 export const getAllOrders = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const location = req.query.location as string; // Filter by location for location admins
+    
+    let query = supabase
       .from('orders')
       .select(`
         id,
@@ -19,6 +21,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
         payment_method,
         order_date,
         status,
+        location,
         driver_id,
         order_items (
           quantity,
@@ -28,6 +31,13 @@ export const getAllOrders = async (req: Request, res: Response) => {
         )
       `)
       .order('order_date', { ascending: false });
+    
+    // Filter by location if specified (for location admins)
+    if (location) {
+      query = query.eq('location', location);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       return res.status(500).json({ error: 'Failed to fetch orders' });
@@ -60,7 +70,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { first_name, email, phone_number, address, payment_method, total_amount, items } = req.body;
+    const { first_name, email, phone_number, address, payment_method, total_amount, items, location } = req.body;
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -71,6 +81,7 @@ export const createOrder = async (req: Request, res: Response) => {
         address,
         payment_method,
         total_amount,
+        location, // Leeds, Derby, or Sheffield
         status: 'pending'
       })
       .select()

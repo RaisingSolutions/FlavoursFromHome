@@ -88,6 +88,7 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
         phoneNumber: customerInfo.phoneNumber,
         address: customerInfo.address,
         orderType: customerInfo.orderType,
+        location: customerInfo.location || 'Leeds', // Customer's location
         cartData: JSON.stringify(cartData),
         couponCode: couponCode || '',
       },
@@ -124,6 +125,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
       const email = session.metadata!.email;
       const phoneNumber = session.metadata!.phoneNumber;
       const address = session.metadata!.address;
+      const location = session.metadata!.location || 'Leeds';
       const cart = JSON.parse(session.metadata!.cartData);
       const couponCode = session.metadata!.couponCode;
 
@@ -138,6 +140,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
           email: email,
           phone_number: phoneNumber,
           address: address,
+          location: location,
           payment_method: 'ONLINE',
           payment_status: 'PAID',
           total_amount: totalAmount,
