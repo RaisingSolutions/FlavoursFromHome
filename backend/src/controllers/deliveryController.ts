@@ -253,15 +253,16 @@ export const generateRoutesFromOrders = async (req: Request, res: Response) => {
 
 export const assignRoute = async (req: Request, res: Response) => {
   try {
-    const { driverId, orderIds, routeData } = req.body;
+    const { driverId, orderIds, routeData, location } = req.body;
 
-    // Create delivery route
+    // Create delivery route with location
     const { data: route, error: routeError } = await supabase
       .from('delivery_routes')
       .insert({
         driver_id: driverId,
         route_data: routeData,
-        status: 'assigned'
+        status: 'assigned',
+        location: location || 'Leeds'
       })
       .select()
       .single();
@@ -290,6 +291,13 @@ export const getDriverDeliveries = async (req: Request, res: Response) => {
   try {
     const driverId = req.headers['driver-id'];
 
+    // Get driver's location first
+    const { data: driver } = await supabase
+      .from('admin_users')
+      .select('location')
+      .eq('id', driverId)
+      .single();
+
     // Get the driver's route
     const { data: route, error: routeError } = await supabase
       .from('delivery_routes')
@@ -298,11 +306,18 @@ export const getDriverDeliveries = async (req: Request, res: Response) => {
       .eq('status', 'assigned')
       .single();
 
-    const { data: orders, error } = await supabase
+    let query = supabase
       .from('orders')
       .select('id, first_name, address, phone_number, status, route_id')
       .eq('driver_id', driverId)
       .in('status', ['ready', 'delivered']);
+    
+    // Filter by driver's location
+    if (driver && driver.location) {
+      query = query.eq('location', driver.location);
+    }
+
+    const { data: orders, error } = await query;
 
     if (error) throw error;
 

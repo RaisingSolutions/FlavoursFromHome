@@ -27,6 +27,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
       username: data.username,
       is_super_admin: data.is_super_admin,
       role: data.role || 'admin',
+      location: data.location, // Leeds, Derby, Sheffield, or null for super admin
       message: 'Login successful'
     });
   } catch (error) {
@@ -38,7 +39,7 @@ export const getAllAdmins = async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabase
       .from('admin_users')
-      .select('id, username, is_active, is_super_admin, created_at')
+      .select('id, username, is_active, is_super_admin, location, role, created_at')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -51,7 +52,7 @@ export const getAllAdmins = async (req: Request, res: Response) => {
 
 export const createAdmin = async (req: Request, res: Response) => {
   try {
-    const { username, password, is_super_admin } = req.body;
+    const { username, password, is_super_admin, location } = req.body;
 
     const saltRounds = 10;
     const password_hash = await bcrypt.hash(password, saltRounds);
@@ -61,9 +62,10 @@ export const createAdmin = async (req: Request, res: Response) => {
       .insert({
         username,
         password_hash,
-        is_super_admin: is_super_admin || false
+        is_super_admin: is_super_admin || false,
+        location: is_super_admin ? null : location // Super admin has no location
       })
-      .select('id, username, is_active, is_super_admin, created_at')
+      .select('id, username, is_active, is_super_admin, location, created_at')
       .single();
 
     if (error) throw error;
@@ -116,11 +118,20 @@ export const deleteAdmin = async (req: Request, res: Response) => {
 
 export const getDrivers = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const location = req.query.location as string;
+    
+    let query = supabase
       .from('admin_users')
       .select('id, username')
       .eq('is_active', true)
       .eq('role', 'driver');
+    
+    // Filter by location if specified
+    if (location) {
+      query = query.eq('location', location);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -132,7 +143,7 @@ export const getDrivers = async (req: Request, res: Response) => {
 
 export const createDriver = async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, location } = req.body;
 
     const saltRounds = 10;
     const password_hash = await bcrypt.hash(password, saltRounds);
@@ -143,9 +154,10 @@ export const createDriver = async (req: Request, res: Response) => {
         username,
         password_hash,
         is_super_admin: false,
-        role: 'driver'
+        role: 'driver',
+        location // Drivers are location-specific
       })
-      .select('id, username, is_active, role, created_at')
+      .select('id, username, is_active, role, location, created_at')
       .single();
 
     if (error) throw error;

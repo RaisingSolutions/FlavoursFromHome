@@ -24,6 +24,9 @@ function App() {
   const [products, setProducts] = useState([])
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [location, setLocation] = useState<string>(() => {
+    return localStorage.getItem('userLocation') || ''
+  })
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('cart')
     const timestamp = localStorage.getItem('cartTimestamp')
@@ -62,7 +65,7 @@ function App() {
   useEffect(() => {
     fetchCategories()
     fetchProducts()
-  }, [])
+  }, [location])
 
   useEffect(() => {
     if (cart.length > 0) {
@@ -86,21 +89,26 @@ function App() {
 
   const fetchProducts = async () => {
     try {
-      const data = await API.fetchProducts()
+      const data = await API.fetchProducts(location)
       setProducts(data)
     } catch (err) {
       console.error('Failed to fetch products')
     }
   }
 
+  const handleLocationChange = (newLocation: string) => {
+    setLocation(newLocation)
+    localStorage.setItem('userLocation', newLocation)
+  }
+
   const handleCategoryFilter = async (categoryId: number | null) => {
     setSelectedCategory(categoryId)
     try {
       if (categoryId === null) {
-        const data = await API.fetchProducts()
+        const data = await API.fetchProducts(location)
         setProducts(data)
       } else {
-        const data = await API.fetchProductsByCategory(categoryId)
+        const data = await API.fetchProductsByCategory(categoryId, location)
         setProducts(data)
       }
     } catch (err) {
@@ -184,6 +192,7 @@ function App() {
             <CheckoutPage 
               cart={cart}
               cartCount={cartCount}
+              location={location}
               onBackToCart={() => setCurrentPage('cart')}
               onShowToast={(message, type) => setToast({ message, type })}
             />
@@ -203,6 +212,8 @@ function App() {
               products={products}
               selectedCategory={selectedCategory}
               cart={cart}
+              location={location}
+              onLocationChange={handleLocationChange}
               onCategoryFilter={handleCategoryFilter}
               onAddToCart={addToCart}
               onUpdateQuantity={updateQuantity}

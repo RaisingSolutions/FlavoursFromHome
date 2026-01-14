@@ -90,4 +90,33 @@ router.post('/webhook', handleWebhook);
  */
 router.post('/verify-coupon', verifyCoupon);
 
+// Test endpoint to complete order without webhook (for local testing)
+router.post('/complete-order-test', async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    
+    if (session.payment_status === 'paid') {
+      // Manually trigger the webhook logic
+      const event = {
+        type: 'checkout.session.completed',
+        data: { object: session }
+      };
+      
+      // Call webhook handler without signature verification
+      const { handleWebhook } = require('../controllers/paymentController');
+      req.body = event;
+      req.headers['stripe-signature'] = 'test';
+      
+      // Process the order
+      await handleWebhook(req, res);
+    } else {
+      res.status(400).json({ error: 'Payment not completed' });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

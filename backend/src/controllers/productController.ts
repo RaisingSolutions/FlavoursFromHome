@@ -5,6 +5,7 @@ import { sendWhatsAppMessage } from '../utils/whatsapp';
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const isAdmin = req.query.admin === 'true';
+    const location = req.query.location as string;
     
     let query = supabase
       .from('products')
@@ -16,7 +17,9 @@ export const getAllProducts = async (req: Request, res: Response) => {
         weight,
         image_url,
         category_id,
-        inventory,
+        inventory_leeds,
+        inventory_derby,
+        inventory_sheffield,
         is_active,
         has_limit,
         max_per_order,
@@ -54,14 +57,22 @@ export const getAllProducts = async (req: Request, res: Response) => {
       ratings[15] = ratings[14];
     }
 
-    // Add average rating to products
-    const productsWithRatings = data.map(product => ({
-      ...product,
-      average_rating: ratings[product.id] 
-        ? parseFloat((ratings[product.id].total / ratings[product.id].count).toFixed(1))
-        : null,
-      rating_count: ratings[product.id]?.count || 0
-    }));
+    // Add average rating and location-specific inventory to products
+    const productsWithRatings = data.map(product => {
+      let inventory = 0;
+      if (location === 'Leeds') inventory = product.inventory_leeds;
+      else if (location === 'Derby') inventory = product.inventory_derby;
+      else if (location === 'Sheffield') inventory = product.inventory_sheffield;
+      
+      return {
+        ...product,
+        inventory, // Location-specific inventory for customers
+        average_rating: ratings[product.id] 
+          ? parseFloat((ratings[product.id].total / ratings[product.id].count).toFixed(1))
+          : null,
+        rating_count: ratings[product.id]?.count || 0
+      };
+    });
 
     res.json(productsWithRatings);
   } catch (error) {
@@ -130,7 +141,7 @@ export const getProductsByCategory = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { name, description, price, category_id, weight, image_url, inventory, has_limit, max_per_order } = req.body;
+    const { name, description, price, category_id, weight, image_url, inventory_leeds, inventory_derby, inventory_sheffield, has_limit, max_per_order } = req.body;
     
     const { data, error } = await supabase
       .from('products')
@@ -141,7 +152,9 @@ export const createProduct = async (req: Request, res: Response) => {
         category_id,
         weight,
         image_url,
-        inventory: inventory || 0,
+        inventory_leeds: inventory_leeds || 0,
+        inventory_derby: inventory_derby || 0,
+        inventory_sheffield: inventory_sheffield || 0,
         has_limit: has_limit || false,
         max_per_order: max_per_order || null
       })
@@ -159,7 +172,7 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, price, category_id, weight, image_url, inventory, has_limit, max_per_order } = req.body;
+    const { name, description, price, category_id, weight, image_url, inventory_leeds, inventory_derby, inventory_sheffield, has_limit, max_per_order } = req.body;
     
     const { data, error } = await supabase
       .from('products')
@@ -170,7 +183,9 @@ export const updateProduct = async (req: Request, res: Response) => {
         category_id,
         weight,
         image_url,
-        inventory,
+        inventory_leeds,
+        inventory_derby,
+        inventory_sheffield,
         has_limit,
         max_per_order,
         updated_at: new Date().toISOString()
@@ -181,11 +196,16 @@ export const updateProduct = async (req: Request, res: Response) => {
 
     if (error) throw error;
 
-    // Send WhatsApp alert if inventory is 10 or less
-    if (inventory <= 10) {
+    // Send WhatsApp alert if any location inventory is 10 or less
+    const lowStockLocations = [];
+    if (inventory_leeds <= 10) lowStockLocations.push(`Leeds: ${inventory_leeds}`);
+    if (inventory_derby <= 10) lowStockLocations.push(`Derby: ${inventory_derby}`);
+    if (inventory_sheffield <= 10) lowStockLocations.push(`Sheffield: ${inventory_sheffield}`);
+    
+    if (lowStockLocations.length > 0) {
       const adminPhone = process.env.ADMIN_PHONE_NUMBER;
       if (adminPhone) {
-        const message = `⚠️ Low Stock Alert!\n\nProduct: ${name}\nCurrent Stock: ${inventory}\n\nPlease restock soon.`;
+        const message = `⚠️ Low Stock Alert!\n\nProduct: ${name}\n${lowStockLocations.join('\n')}\n\nPlease restock soon.`;
         sendWhatsAppMessage(adminPhone, message);
       }
     }
@@ -233,12 +253,15 @@ export const toggleProductStatus = async (req: Request, res: Response) => {
 
 export const recordDelivery = async (req: Request, res: Response) => {
   try {
-    const { deliveryDate, items } = req.body;
+    const { deliveryDate, items, location } = req.body;
 
-    // Create delivery record
+    // Create delivery record with location
     const { data: delivery, error: deliveryError } = await supabase
       .from('deliveries')
-      .insert({ delivery_date: deliveryDate })
+      .insert({ 
+        delivery_date: deliveryDate,
+        location: location || 'Leeds'
+      })
       .select()
       .single();
 
@@ -255,17 +278,22 @@ export const recordDelivery = async (req: Request, res: Response) => {
           quantity: item.quantity
         });
 
-      // Update product inventory
+      // Update product inventory for specific location
       const { data: product } = await supabase
         .from('products')
-        .select('inventory')
+        .select('inventory_leeds, inventory_derby, inventory_sheffield')
         .eq('id', item.product_id)
         .single();
 
       if (product) {
+        const updateData: any = {};
+        if (location === 'Leeds') updateData.inventory_leeds = product.inventory_leeds + item.quantity;
+        else if (location === 'Derby') updateData.inventory_derby = product.inventory_derby + item.quantity;
+        else if (location === 'Sheffield') updateData.inventory_sheffield = product.inventory_sheffield + item.quantity;
+        
         await supabase
           .from('products')
-          .update({ inventory: product.inventory + item.quantity })
+          .update(updateData)
           .eq('id', item.product_id);
       }
     }
@@ -279,11 +307,14 @@ export const recordDelivery = async (req: Request, res: Response) => {
 
 export const getDeliveries = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const location = req.query.location as string;
+    
+    let query = supabase
       .from('deliveries')
       .select(`
         id,
         delivery_date,
+        location,
         delivery_items (
           quantity,
           products (
@@ -292,6 +323,13 @@ export const getDeliveries = async (req: Request, res: Response) => {
         )
       `)
       .order('delivery_date', { ascending: false });
+    
+    // Filter by location if specified
+    if (location) {
+      query = query.eq('location', location);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
