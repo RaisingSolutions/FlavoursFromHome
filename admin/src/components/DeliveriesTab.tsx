@@ -27,9 +27,10 @@ export default function DeliveriesTab({ userLocation, isSuperAdmin }: { userLoca
 
   const fetchDeliveries = useCallback(async () => {
     try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
       const url = !isSuperAdmin && userLocation
-        ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/deliveries/history?location=${userLocation}`
-        : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/deliveries/history`
+        ? `${baseUrl}/products/deliveries/history?location=${userLocation}`
+        : `${baseUrl}/products/deliveries/history`
       
       const response = await fetch(url)
       const data = await response.json()
@@ -72,7 +73,8 @@ export default function DeliveriesTab({ userLocation, isSuperAdmin }: { userLoca
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/record-delivery`, {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+      const response = await fetch(`${baseUrl}/products/record-delivery`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

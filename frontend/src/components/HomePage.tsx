@@ -1,8 +1,12 @@
+import LocationSelector from './LocationSelector'
+
 interface HomePageProps {
   categories: any[]
   products: any[]
   selectedCategory: number | null
   cart: any[]
+  location: string
+  onLocationChange: (location: string) => void
   onCategoryFilter: (categoryId: number | null) => void
   onAddToCart: (product: any) => void
   onUpdateQuantity: (productId: number, change: number) => void
@@ -14,6 +18,8 @@ export default function HomePage({
   products, 
   selectedCategory, 
   cart,
+  location,
+  onLocationChange,
   onCategoryFilter, 
   onAddToCart,
   onUpdateQuantity,
@@ -21,6 +27,8 @@ export default function HomePage({
 }: HomePageProps) {
   return (
     <>
+      <LocationSelector currentLocation={location} onLocationChange={onLocationChange} />
+      
       <section className="hero">
         <h1>WELCOME TO FLAVOURS FROM HOME</h1>
         <p>Authentic ingredients delivered to your door</p>
@@ -81,7 +89,10 @@ export default function HomePage({
         ) : (
           <div className="products-grid">
             {products.map((product: any) => (
-            <div key={product.id} className="product-card">
+            <div key={product.id} className="product-card" style={{
+              opacity: product.inventory === 0 ? 0.6 : 1,
+              filter: product.inventory === 0 ? 'grayscale(50%)' : 'none'
+            }}>
               <div className="product-image">
                 {product.image_url ? (
                   <img src={product.image_url} alt={product.name} />
@@ -105,11 +116,18 @@ export default function HomePage({
                 <div className="product-details">
                   <span className="price">£{product.price}</span>
                   <span className="weight">{product.weight}</span>
-                  {product.inventory <= 10 && product.inventory > 0 && (
-                    <span style={{ color: 'red', fontWeight: 'bold', fontSize: '12px' }}>Only {product.inventory} left!</span>
+                  {product.inventory > 0 && product.inventory <= 10 && (
+                    <span style={{ color: '#ff6b6b', fontWeight: 'bold', fontSize: '12px' }}>{product.inventory} left</span>
                   )}
                   {product.inventory === 0 && (
-                    <span style={{ color: 'red', fontWeight: 'bold', fontSize: '12px' }}>Out of Stock</span>
+                    <span style={{ 
+                      background: '#ff6b6b', 
+                      color: 'white', 
+                      padding: '4px 8px', 
+                      borderRadius: '4px',
+                      fontWeight: 'bold', 
+                      fontSize: '11px' 
+                    }}>SOLD OUT</span>
                   )}
                 </div>
                 {cart.find(item => item.id === product.id) ? (

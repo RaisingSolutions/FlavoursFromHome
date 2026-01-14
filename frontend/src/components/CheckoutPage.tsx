@@ -12,6 +12,7 @@ interface CartItem {
 interface CheckoutPageProps {
   cart: CartItem[]
   cartCount: number
+  location: string
   onBackToCart: () => void
   onShowToast: (message: string, type: 'success' | 'error') => void
 }
@@ -19,6 +20,7 @@ interface CheckoutPageProps {
 export default function CheckoutPage({ 
   cart, 
   cartCount, 
+  location,
   onBackToCart,
   onShowToast
 }: CheckoutPageProps) {
@@ -128,7 +130,8 @@ export default function CheckoutPage({
         email,
         phoneNumber,
         address: orderType === 'delivery' ? address : 'Collection',
-        orderType
+        orderType,
+        location
       }
 
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/payment/create-checkout-session`, {

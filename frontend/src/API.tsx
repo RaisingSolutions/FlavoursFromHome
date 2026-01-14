@@ -7,12 +7,16 @@ export const fetchCategories = async () => {
 }
 
 // Product APIs
-export const fetchProducts = async () => {
-  const response = await fetch(`${BASE_URL}/products`)
+export const fetchProducts = async (location?: string) => {
+  const url = location ? `${BASE_URL}/products?location=${location}` : `${BASE_URL}/products`
+  const response = await fetch(url)
   return response.json()
 }
 
-export const fetchProductsByCategory = async (categoryId: number) => {
-  const response = await fetch(`${BASE_URL}/products/category/${categoryId}`)
+export const fetchProductsByCategory = async (categoryId: number, location?: string) => {
+  const url = location 
+    ? `${BASE_URL}/products/category/${categoryId}?location=${location}`
+    : `${BASE_URL}/products/category/${categoryId}`
+  const response = await fetch(url)
   return response.json()
 }

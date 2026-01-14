@@ -107,11 +107,19 @@ export const handleWebhook = async (req: Request, res: Response) => {
   console.log('Webhook received:', { sig, hasBody: !!req.body });
 
   try {
-    const event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+    let event;
+    
+    // Skip signature verification in development for test endpoint
+    if (process.env.NODE_ENV === 'development' && sig === 'test') {
+      event = req.body;
+      console.log('Using test mode - skipping signature verification');
+    } else {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+    }
 
     console.log('Webhook event type:', event.type);
 

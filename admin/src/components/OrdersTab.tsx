@@ -8,9 +8,10 @@ export default function OrdersTab({ userLocation, isSuperAdmin }: { userLocation
 
   const fetchOrders = async () => {
     try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
       const url = userLocation && !isSuperAdmin 
-        ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/orders?location=${userLocation}`
-        : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/orders`
+        ? `${baseUrl}/orders?location=${userLocation}`
+        : `${baseUrl}/orders`
       
       const response = await fetch(url)
       const data = await response.json()
@@ -23,7 +24,7 @@ export default function OrdersTab({ userLocation, isSuperAdmin }: { userLocation
 
   useEffect(() => {
     fetchOrders()
-  }, [])
+  }, [userLocation])
 
   const handleStatusUpdate = async (id: number, status: string) => {
     try {
