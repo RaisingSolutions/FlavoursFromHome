@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import * as API from '../APIS'
 
-export default function DeliveryRoutes() {
+export default function DeliveryRoutes({ userLocation, isSuperAdmin }: { userLocation: string | null, isSuperAdmin: boolean }) {
   const [numDrivers, setNumDrivers] = useState(1)
   const [routes, setRoutes] = useState<any[]>([])
   const [drivers, setDrivers] = useState<any[]>([])
@@ -19,7 +19,12 @@ export default function DeliveryRoutes() {
 
   const fetchDrivers = async () => {
     try {
-      const data = await API.fetchDrivers()
+      const url = !isSuperAdmin && userLocation
+        ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/drivers?location=${userLocation}`
+        : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/drivers`
+      
+      const response = await fetch(url)
+      const data = await response.json()
       setDrivers(data)
     } catch (err) {
       console.error('Failed to fetch drivers')
@@ -28,7 +33,12 @@ export default function DeliveryRoutes() {
 
   const fetchReadyOrders = async () => {
     try {
-      const data = await API.fetchOrders()
+      const url = !isSuperAdmin && userLocation
+        ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/orders?location=${userLocation}`
+        : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/orders`
+      
+      const response = await fetch(url)
+      const data = await response.json()
       // Only show ready orders that haven't been assigned to a driver yet
       const ready = Array.isArray(data) ? data.filter((order: any) => order.status === 'ready' && !order.driver_id) : []
       setReadyOrders(ready)
@@ -41,12 +51,26 @@ export default function DeliveryRoutes() {
 
   const handleCreateDriver = async () => {
     try {
-      await API.createDriver(newDriverUsername, newDriverPassword)
-      alert('Driver created successfully!')
-      setShowCreateDriver(false)
-      setNewDriverUsername('')
-      setNewDriverPassword('')
-      fetchDrivers()
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/drivers`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'admin-id': localStorage.getItem('adminLoginState') ? JSON.parse(localStorage.getItem('adminLoginState')!).adminId : ''
+        },
+        body: JSON.stringify({ 
+          username: newDriverUsername, 
+          password: newDriverPassword,
+          location: userLocation || 'Leeds'
+        })
+      })
+      
+      if (response.ok) {
+        alert('Driver created successfully!')
+        setShowCreateDriver(false)
+        setNewDriverUsername('')
+        setNewDriverPassword('')
+        fetchDrivers()
+      }
     } catch (err) {
       console.error('Failed to create driver')
       alert('Failed to create driver')
@@ -75,10 +99,22 @@ export default function DeliveryRoutes() {
   const handleAssignRoute = async (route: any, driverId: number) => {
     try {
       const orderIds = route.orders.map((o: any) => o.id)
-      await API.assignRoute(driverId, orderIds, route)
-      alert('Route assigned successfully!')
-      setRoutes([])
-      fetchReadyOrders() // Refresh the ready orders list
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/delivery/assign-route`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          driverId, 
+          orderIds, 
+          routeData: route,
+          location: userLocation || 'Leeds'
+        })
+      })
+      
+      if (response.ok) {
+        alert('Route assigned successfully!')
+        setRoutes([])
+        fetchReadyOrders() // Refresh the ready orders list
+      }
     } catch (err) {
       console.error('Failed to assign route')
     }

@@ -255,10 +255,13 @@ export const recordDelivery = async (req: Request, res: Response) => {
   try {
     const { deliveryDate, items, location } = req.body;
 
-    // Create delivery record
+    // Create delivery record with location
     const { data: delivery, error: deliveryError } = await supabase
       .from('deliveries')
-      .insert({ delivery_date: deliveryDate })
+      .insert({ 
+        delivery_date: deliveryDate,
+        location: location || 'Leeds'
+      })
       .select()
       .single();
 
@@ -304,11 +307,14 @@ export const recordDelivery = async (req: Request, res: Response) => {
 
 export const getDeliveries = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const location = req.query.location as string;
+    
+    let query = supabase
       .from('deliveries')
       .select(`
         id,
         delivery_date,
+        location,
         delivery_items (
           quantity,
           products (
@@ -317,6 +323,13 @@ export const getDeliveries = async (req: Request, res: Response) => {
         )
       `)
       .order('delivery_date', { ascending: false });
+    
+    // Filter by location if specified
+    if (location) {
+      query = query.eq('location', location);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 

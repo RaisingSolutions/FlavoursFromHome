@@ -2,12 +2,29 @@
 import { useState, useEffect } from 'react'
 import * as API from '../APIS'
 
-export default function ProductsTab() {
+interface ProductsTabProps {
+  userLocation: string | null
+  isSuperAdmin: boolean
+}
+
+export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabProps) {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '', has_limit: false, max_per_order: '' })
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    description: '', 
+    price: '', 
+    weight: '', 
+    category_id: '', 
+    image_url: '', 
+    inventory_leeds: '', 
+    inventory_derby: '', 
+    inventory_sheffield: '', 
+    has_limit: false, 
+    max_per_order: '' 
+  })
 
   const fetchProducts = async () => {
     try {
@@ -34,19 +51,26 @@ export default function ProductsTab() {
 
   const handleCreateProduct = async () => {
     try {
-      const success = await API.createProduct(
-        formData.name,
-        formData.description,
-        parseFloat(formData.price),
-        formData.weight,
-        parseInt(formData.category_id),
-        formData.image_url,
-        parseInt(formData.inventory),
-        formData.has_limit,
-        formData.max_per_order ? parseInt(formData.max_per_order) : null
-      )
-      if (success) {
-        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '', has_limit: false, max_per_order: '' })
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          weight: formData.weight,
+          category_id: parseInt(formData.category_id),
+          image_url: formData.image_url,
+          inventory_leeds: parseInt(formData.inventory_leeds) || 0,
+          inventory_derby: parseInt(formData.inventory_derby) || 0,
+          inventory_sheffield: parseInt(formData.inventory_sheffield) || 0,
+          has_limit: formData.has_limit,
+          max_per_order: formData.max_per_order ? parseInt(formData.max_per_order) : null
+        })
+      })
+      
+      if (response.ok) {
+        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory_leeds: '', inventory_derby: '', inventory_sheffield: '', has_limit: false, max_per_order: '' })
         setShowCreateForm(false)
         fetchProducts()
       }
@@ -64,7 +88,9 @@ export default function ProductsTab() {
       weight: item.weight || '',
       category_id: item.category_id?.toString() || '',
       image_url: item.image_url || '',
-      inventory: item.inventory?.toString() || '0',
+      inventory_leeds: item.inventory_leeds?.toString() || '0',
+      inventory_derby: item.inventory_derby?.toString() || '0',
+      inventory_sheffield: item.inventory_sheffield?.toString() || '0',
       has_limit: item.has_limit || false,
       max_per_order: item.max_per_order?.toString() || ''
     })
@@ -73,20 +99,26 @@ export default function ProductsTab() {
 
   const handleUpdate = async () => {
     try {
-      const success = await API.updateProduct(
-        editingItem!.id,
-        formData.name,
-        formData.description,
-        parseFloat(formData.price),
-        formData.weight,
-        parseInt(formData.category_id),
-        formData.image_url,
-        parseInt(formData.inventory),
-        formData.has_limit,
-        formData.max_per_order ? parseInt(formData.max_per_order) : null
-      )
-      if (success) {
-        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '', has_limit: false, max_per_order: '' })
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/${editingItem.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          weight: formData.weight,
+          category_id: parseInt(formData.category_id),
+          image_url: formData.image_url,
+          inventory_leeds: parseInt(formData.inventory_leeds),
+          inventory_derby: parseInt(formData.inventory_derby),
+          inventory_sheffield: parseInt(formData.inventory_sheffield),
+          has_limit: formData.has_limit,
+          max_per_order: formData.max_per_order ? parseInt(formData.max_per_order) : null
+        })
+      })
+      
+      if (response.ok) {
+        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory_leeds: '', inventory_derby: '', inventory_sheffield: '', has_limit: false, max_per_order: '' })
         setShowCreateForm(false)
         setEditingItem(null)
         fetchProducts()
@@ -106,6 +138,21 @@ export default function ProductsTab() {
     }
   }
 
+  const getInventoryForLocation = (product: any) => {
+    if (isSuperAdmin) {
+      return `L:${product.inventory_leeds} D:${product.inventory_derby} S:${product.inventory_sheffield}`
+    }
+    if (userLocation === 'Leeds') return product.inventory_leeds
+    if (userLocation === 'Derby') return product.inventory_derby
+    if (userLocation === 'Sheffield') return product.inventory_sheffield
+    return 0
+  }
+
+  const canEditInventory = (location: 'Leeds' | 'Derby' | 'Sheffield') => {
+    if (isSuperAdmin) return true
+    return userLocation === location
+  }
+
   return (
     <div className="products-section">
       <div className="section-header">
@@ -113,7 +160,7 @@ export default function ProductsTab() {
         <button className="create-btn" onClick={() => {
           setShowCreateForm(true)
           setEditingItem(null)
-          setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '', has_limit: false, max_per_order: '' })
+          setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory_leeds: '', inventory_derby: '', inventory_sheffield: '', has_limit: false, max_per_order: '' })
         }}>Create Product</button>
       </div>
       
@@ -144,12 +191,37 @@ export default function ProductsTab() {
             value={formData.weight}
             onChange={(e) => setFormData({...formData, weight: e.target.value})}
           />
-          <input
-            type="number"
-            placeholder="Inventory Stock"
-            value={formData.inventory}
-            onChange={(e) => setFormData({...formData, inventory: e.target.value})}
-          />
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '10px' }}>
+            {(isSuperAdmin || userLocation === 'Leeds') && (
+              <input
+                type="number"
+                placeholder="Leeds Stock"
+                value={formData.inventory_leeds}
+                onChange={(e) => setFormData({...formData, inventory_leeds: e.target.value})}
+                disabled={!canEditInventory('Leeds')}
+              />
+            )}
+            {(isSuperAdmin || userLocation === 'Derby') && (
+              <input
+                type="number"
+                placeholder="Derby Stock"
+                value={formData.inventory_derby}
+                onChange={(e) => setFormData({...formData, inventory_derby: e.target.value})}
+                disabled={!canEditInventory('Derby')}
+              />
+            )}
+            {(isSuperAdmin || userLocation === 'Sheffield') && (
+              <input
+                type="number"
+                placeholder="Sheffield Stock"
+                value={formData.inventory_sheffield}
+                onChange={(e) => setFormData({...formData, inventory_sheffield: e.target.value})}
+                disabled={!canEditInventory('Sheffield')}
+              />
+            )}
+          </div>
+          
           <select
             value={formData.category_id}
             onChange={(e) => setFormData({...formData, category_id: e.target.value})}
@@ -192,7 +264,7 @@ export default function ProductsTab() {
             <button className="cancel-btn" onClick={() => {
               setShowCreateForm(false)
               setEditingItem(null)
-              setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory: '', has_limit: false, max_per_order: '' })
+              setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory_leeds: '', inventory_derby: '', inventory_sheffield: '', has_limit: false, max_per_order: '' })
             }}>Cancel</button>
           </div>
         </div>
@@ -216,7 +288,14 @@ export default function ProductsTab() {
               <span className="price">£{product.price}</span>
               <span className="weight">{product.weight}</span>
               <span className="category">{product.categories?.name}</span>
-              <span className="inventory" style={{ color: product.inventory <= 10 ? 'red' : 'green', fontWeight: 'bold' }}>Stock: {product.inventory}</span>
+              <span className="inventory" style={{ 
+                color: (isSuperAdmin ? Math.min(product.inventory_leeds, product.inventory_derby, product.inventory_sheffield) : 
+                       (userLocation === 'Leeds' ? product.inventory_leeds : 
+                        userLocation === 'Derby' ? product.inventory_derby : product.inventory_sheffield)) <= 10 ? 'red' : 'green', 
+                fontWeight: 'bold' 
+              }}>
+                Stock: {getInventoryForLocation(product)}
+              </span>
             </div>
             <div className="item-actions">
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>

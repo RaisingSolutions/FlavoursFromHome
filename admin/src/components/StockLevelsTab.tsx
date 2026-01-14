@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import * as API from '../APIS'
 
-export default function StockLevelsTab() {
+export default function StockLevelsTab({ userLocation, isSuperAdmin }: { userLocation: string | null, isSuperAdmin: boolean }) {
   const [products, setProducts] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -18,6 +18,13 @@ export default function StockLevelsTab() {
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts])
+
+  const getInventoryForLocation = (product: any) => {
+    if (userLocation === 'Leeds') return product.inventory_leeds
+    if (userLocation === 'Derby') return product.inventory_derby
+    if (userLocation === 'Sheffield') return product.inventory_sheffield
+    return 0
+  }
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -42,33 +49,58 @@ export default function StockLevelsTab() {
             <tr style={{ background: '#34495e', color: 'white' }}>
               <th style={{ padding: '15px', textAlign: 'left', border: '1px solid #ddd' }}>Product Name</th>
               <th style={{ padding: '15px', textAlign: 'left', border: '1px solid #ddd' }}>Category</th>
-              <th style={{ padding: '15px', textAlign: 'center', border: '1px solid #ddd' }}>Current Stock</th>
+              {isSuperAdmin ? (
+                <>
+                  <th style={{ padding: '15px', textAlign: 'center', border: '1px solid #ddd', background: '#3498db' }}>Leeds Stock</th>
+                  <th style={{ padding: '15px', textAlign: 'center', border: '1px solid #ddd', background: '#e74c3c' }}>Derby Stock</th>
+                  <th style={{ padding: '15px', textAlign: 'center', border: '1px solid #ddd', background: '#2ecc71' }}>Sheffield Stock</th>
+                </>
+              ) : (
+                <th style={{ padding: '15px', textAlign: 'center', border: '1px solid #ddd' }}>Current Stock</th>
+              )}
               <th style={{ padding: '15px', textAlign: 'center', border: '1px solid #ddd' }}>Status</th>
             </tr>
           </thead>
           <tbody>
-            {filteredProducts.map((product) => (
-              <tr key={product.id} style={{ background: product.inventory === 0 ? '#ffebee' : product.inventory <= 10 ? '#fff3cd' : 'white' }}>
-                <td style={{ padding: '15px', border: '1px solid #ddd', fontWeight: 'bold' }}>
-                  {product.name}
-                </td>
-                <td style={{ padding: '15px', border: '1px solid #ddd' }}>
-                  {product.categories?.name || '-'}
-                </td>
-                <td style={{ padding: '15px', border: '1px solid #ddd', textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>
-                  {product.inventory}
-                </td>
-                <td style={{ padding: '15px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  {product.inventory === 0 ? (
-                    <span style={{ color: 'red', fontWeight: 'bold' }}>⚠️ Out of Stock</span>
-                  ) : product.inventory <= 10 ? (
-                    <span style={{ color: '#ff9800', fontWeight: 'bold' }}>⚠️ Low Stock</span>
+            {filteredProducts.map((product) => {
+              const inventory = isSuperAdmin ? Math.min(product.inventory_leeds, product.inventory_derby, product.inventory_sheffield) : getInventoryForLocation(product)
+              return (
+                <tr key={product.id} style={{ background: inventory === 0 ? '#ffebee' : inventory <= 10 ? '#fff3cd' : 'white' }}>
+                  <td style={{ padding: '15px', border: '1px solid #ddd', fontWeight: 'bold' }}>
+                    {product.name}
+                  </td>
+                  <td style={{ padding: '15px', border: '1px solid #ddd' }}>
+                    {product.categories?.name || '-'}
+                  </td>
+                  {isSuperAdmin ? (
+                    <>
+                      <td style={{ padding: '15px', border: '1px solid #ddd', textAlign: 'center', fontSize: '18px', fontWeight: 'bold', background: product.inventory_leeds <= 10 ? '#fff3cd' : 'white' }}>
+                        {product.inventory_leeds}
+                      </td>
+                      <td style={{ padding: '15px', border: '1px solid #ddd', textAlign: 'center', fontSize: '18px', fontWeight: 'bold', background: product.inventory_derby <= 10 ? '#fff3cd' : 'white' }}>
+                        {product.inventory_derby}
+                      </td>
+                      <td style={{ padding: '15px', border: '1px solid #ddd', textAlign: 'center', fontSize: '18px', fontWeight: 'bold', background: product.inventory_sheffield <= 10 ? '#fff3cd' : 'white' }}>
+                        {product.inventory_sheffield}
+                      </td>
+                    </>
                   ) : (
-                    <span style={{ color: 'green', fontWeight: 'bold' }}>✓ In Stock</span>
+                    <td style={{ padding: '15px', border: '1px solid #ddd', textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }}>
+                      {inventory}
+                    </td>
                   )}
-                </td>
-              </tr>
-            ))}
+                  <td style={{ padding: '15px', border: '1px solid #ddd', textAlign: 'center' }}>
+                    {inventory === 0 ? (
+                      <span style={{ color: 'red', fontWeight: 'bold' }}>⚠️ Out of Stock</span>
+                    ) : inventory <= 10 ? (
+                      <span style={{ color: '#ff9800', fontWeight: 'bold' }}>⚠️ Low Stock</span>
+                    ) : (
+                      <span style={{ color: 'green', fontWeight: 'bold' }}>✓ In Stock</span>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

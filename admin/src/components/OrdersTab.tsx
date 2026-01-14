@@ -2,13 +2,18 @@
 import { useState, useEffect } from 'react'
 import * as API from '../APIS'
 
-export default function OrdersTab() {
+export default function OrdersTab({ userLocation, isSuperAdmin }: { userLocation: string | null, isSuperAdmin: boolean }) {
   const [orders, setOrders] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'pending' | 'ready' | 'out_for_delivery' | 'delivered'>('pending')
 
   const fetchOrders = async () => {
     try {
-      const data = await API.fetchOrders()
+      const url = userLocation && !isSuperAdmin 
+        ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/orders?location=${userLocation}`
+        : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/orders`
+      
+      const response = await fetch(url)
+      const data = await response.json()
       setOrders(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error('Failed to fetch orders')

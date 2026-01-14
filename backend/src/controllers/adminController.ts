@@ -118,11 +118,20 @@ export const deleteAdmin = async (req: Request, res: Response) => {
 
 export const getDrivers = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const location = req.query.location as string;
+    
+    let query = supabase
       .from('admin_users')
       .select('id, username')
       .eq('is_active', true)
       .eq('role', 'driver');
+    
+    // Filter by location if specified
+    if (location) {
+      query = query.eq('location', location);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 

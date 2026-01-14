@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import * as API from '../APIS'
 import { useToastContext } from '../context/ToastContext'
 
-export default function DeliveriesTab() {
+export default function DeliveriesTab({ userLocation, isSuperAdmin }: { userLocation: string | null, isSuperAdmin: boolean }) {
   const [products, setProducts] = useState<any[]>([])
   const [deliveries, setDeliveries] = useState<any[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -14,21 +14,31 @@ export default function DeliveriesTab() {
   const fetchProducts = useCallback(async () => {
     try {
       const data = await API.fetchProducts()
-      setProducts(data)
+      // Filter products by location for location admins
+      if (!isSuperAdmin && userLocation) {
+        setProducts(data)
+      } else {
+        setProducts(data)
+      }
     } catch {
       console.error('Failed to fetch products')
     }
-  }, [])
+  }, [isSuperAdmin, userLocation])
 
   const fetchDeliveries = useCallback(async () => {
     try {
-      const data = await API.fetchDeliveries()
+      const url = !isSuperAdmin && userLocation
+        ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/deliveries/history?location=${userLocation}`
+        : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/deliveries/history`
+      
+      const response = await fetch(url)
+      const data = await response.json()
       setDeliveries(Array.isArray(data) ? data : [])
     } catch {
       console.error('Failed to fetch deliveries')
       setDeliveries([])
     }
-  }, [])
+  }, [isSuperAdmin, userLocation])
 
   useEffect(() => {
     fetchProducts()
@@ -62,8 +72,17 @@ export default function DeliveriesTab() {
     }
 
     try {
-      const success = await API.recordDelivery(deliveryDate, deliveryItems)
-      if (success) {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/record-delivery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          deliveryDate, 
+          items: deliveryItems,
+          location: userLocation || 'Leeds'
+        })
+      })
+      
+      if (response.ok) {
         showToast('Delivery recorded and stock updated!', 'success')
         setDeliveryItems([])
         setShowModal(false)

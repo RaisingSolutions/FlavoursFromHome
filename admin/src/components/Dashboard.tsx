@@ -13,10 +13,11 @@ interface DashboardProps {
   isSuperAdmin: boolean
   adminId: string
   userRole: string
+  userLocation: string | null
   onSignOut: () => void
 }
 
-export default function Dashboard({ isSuperAdmin, adminId, userRole, onSignOut }: DashboardProps) {
+export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocation, onSignOut }: DashboardProps) {
   const [showAdminManagement, setShowAdminManagement] = useState(false)
   const [activeTab, setActiveTab] = useState(userRole === 'driver' ? 'delivery' : 'orders')
 
@@ -26,6 +27,7 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, onSignOut }
         <div className="navbar-brand">
           <img src="https://res.cloudinary.com/dulm4r5mo/image/upload/v1763129727/FFH_Logo_f47yft.png" alt="FFH Logo" className="navbar-logo" />
           Flavours From Home Admin Panel
+          {userLocation && <span style={{ marginLeft: '10px', fontSize: '0.9em', color: '#666' }}>({userLocation})</span>}
         </div>
         <div className="navbar-actions">
           {isSuperAdmin && (
@@ -52,7 +54,52 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, onSignOut }
           <div className="tab-content">
             <DriverView driverId={adminId} />
           </div>
+        ) : isSuperAdmin ? (
+          // Super Admin View - Analytics Only
+          <>
+            <div className="tabs">
+              <button 
+                className={`tab ${activeTab === 'categories' ? 'active' : ''}`}
+                onClick={() => setActiveTab('categories')}
+              >
+                Categories
+              </button>
+              <button 
+                className={`tab ${activeTab === 'products' ? 'active' : ''}`}
+                onClick={() => setActiveTab('products')}
+              >
+                Products
+              </button>
+              <button 
+                className={`tab ${activeTab === 'stock' ? 'active' : ''}`}
+                onClick={() => setActiveTab('stock')}
+              >
+                Stock Levels
+              </button>
+              <button 
+                className={`tab ${activeTab === 'deliveries' ? 'active' : ''}`}
+                onClick={() => setActiveTab('deliveries')}
+              >
+                Deliveries
+              </button>
+              <button 
+                className={`tab ${activeTab === 'feedback' ? 'active' : ''}`}
+                onClick={() => setActiveTab('feedback')}
+              >
+                Reviews
+              </button>
+            </div>
+
+            <div className="tab-content">
+              {activeTab === 'categories' && <CategoriesTab />}
+              {activeTab === 'products' && <ProductsTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
+              {activeTab === 'stock' && <StockLevelsTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
+              {activeTab === 'deliveries' && <DeliveriesTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
+              {activeTab === 'feedback' && <FeedbackTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
+            </div>
+          </>
         ) : (
+          // Location Admin View - Full Operations
           <>
             <div className="tabs">
               <button 
@@ -100,13 +147,13 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, onSignOut }
             </div>
 
             <div className="tab-content">
-              {activeTab === 'orders' && <OrdersTab />}
+              {activeTab === 'orders' && <OrdersTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'categories' && <CategoriesTab />}
-              {activeTab === 'products' && <ProductsTab />}
-              {activeTab === 'stock' && <StockLevelsTab />}
-              {activeTab === 'deliveries' && <DeliveriesTab />}
-              {activeTab === 'delivery' && <DeliveryRoutes />}
-              {activeTab === 'feedback' && <FeedbackTab />}
+              {activeTab === 'products' && <ProductsTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
+              {activeTab === 'stock' && <StockLevelsTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
+              {activeTab === 'deliveries' && <DeliveriesTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
+              {activeTab === 'delivery' && <DeliveryRoutes userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
+              {activeTab === 'feedback' && <FeedbackTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
             </div>
           </>
         )}
