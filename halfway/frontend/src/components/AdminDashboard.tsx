@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Navbar from './Navbar';
 import AddUserModal from './AddUserModal';
 import UserListModal from './UserListModal';
+import PaymentsTab from './PaymentsTab';
 
 interface AdminDashboardProps {
   user: any;
@@ -9,18 +10,28 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
-  const [tab, setTab] = useState<'week' | 'month'>('week');
+  const [tab, setTab] = useState<'week' | 'month' | 'payments'>('week');
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
   const [shifts, setShifts] = useState<any[]>([]);
   const [showAddUser, setShowAddUser] = useState(false);
   const [showUserList, setShowUserList] = useState(false);
 
   useEffect(() => {
-    fetchShifts();
-  }, [tab]);
+    if (tab !== 'payments') {
+      fetchShifts();
+    }
+  }, [tab, selectedMonth]);
 
   const fetchShifts = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/shifts?period=${tab}`);
+      let url = `${import.meta.env.VITE_API_BASE_URL}/shifts?period=${tab}`;
+      if (tab === 'month') {
+        url += `&month=${selectedMonth}`;
+      }
+      const response = await fetch(url);
       const data = await response.json();
       setShifts(data);
     } catch (err) {
@@ -84,12 +95,11 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
       </div>
       
       <div style={{ padding: '20px', width: '100%' }}>
-        <div style={{ marginBottom: '25px' }}>
+        <div style={{ marginBottom: '25px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             onClick={() => setTab('week')}
             style={{
               padding: '12px 30px',
-              marginRight: '10px',
               background: tab === 'week' ? '#3498db' : 'white',
               color: tab === 'week' ? 'white' : '#555',
               border: '1px solid #ddd',
@@ -114,13 +124,47 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
               fontWeight: '500'
             }}
           >
-            This Month
+            Monthly View
           </button>
+          <button
+            onClick={() => setTab('payments')}
+            style={{
+              padding: '12px 30px',
+              background: tab === 'payments' ? '#27ae60' : 'white',
+              color: tab === 'payments' ? 'white' : '#555',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '15px',
+              fontWeight: '500'
+            }}
+          >
+            Payments
+          </button>
+          
+          {tab === 'month' && (
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              style={{
+                padding: '12px 20px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '15px',
+                cursor: 'pointer'
+              }}
+            />
+          )}
         </div>
 
-        <h2 style={{ color: '#2c3e50', marginBottom: '25px' }}>
-          {tab === 'week' ? 'Weekly' : 'Monthly'} Shift Schedule
-        </h2>
+        {tab === 'payments' ? (
+          <PaymentsTab selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />
+        ) : (
+          <>
+            <h2 style={{ color: '#2c3e50', marginBottom: '25px' }}>
+              {tab === 'week' ? 'Weekly' : 'Monthly'} Shift Schedule
+            </h2>
 
         {dates.length > 0 ? (
           <div style={{ overflowX: 'auto' }}>
@@ -184,6 +228,8 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
           }}>
             No shifts recorded for this {tab}.
           </div>
+        )}
+          </>
         )}
       </div>
       

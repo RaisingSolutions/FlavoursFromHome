@@ -1,5 +1,5 @@
 import express from 'express';
-import { createShift, getShifts, getUserShifts } from '../controllers/shiftController';
+import { createShift, getShifts, getUserShifts, getMonthlyHours } from '../controllers/shiftController';
 
 const router = express.Router();
 
@@ -83,5 +83,7 @@ router.get('/', getShifts);
  *                 $ref: '#/components/schemas/Shift'
  */
 router.get('/user/:userId', getUserShifts);
+
+router.get('/monthly-hours', getMonthlyHours);
 
 export default router;

@@ -5,6 +5,7 @@ import { swaggerSpec } from './swagger';
 import authRoutes from './routes/authRoutes';
 import shiftRoutes from './routes/shiftRoutes';
 import userRoutes from './routes/userRoutes';
+import paymentRoutes from './routes/paymentRoutes';
 
 const app = express();
 
@@ -21,5 +22,6 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 app.use('/api/auth', authRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/payments', paymentRoutes);
 
 export default app;
