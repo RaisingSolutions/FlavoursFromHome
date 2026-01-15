@@ -19,9 +19,10 @@ export default function DeliveryRoutes({ userLocation, isSuperAdmin }: { userLoc
 
   const fetchDrivers = async () => {
     try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
       const url = !isSuperAdmin && userLocation
-        ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/drivers?location=${userLocation}`
-        : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/drivers`
+        ? `${baseUrl}/admin/drivers?location=${userLocation}`
+        : `${baseUrl}/admin/drivers`
       
       const response = await fetch(url)
       const data = await response.json()
@@ -33,9 +34,10 @@ export default function DeliveryRoutes({ userLocation, isSuperAdmin }: { userLoc
 
   const fetchReadyOrders = async () => {
     try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
       const url = !isSuperAdmin && userLocation
-        ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/orders?location=${userLocation}`
-        : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/orders`
+        ? `${baseUrl}/orders?location=${userLocation}`
+        : `${baseUrl}/orders`
       
       const response = await fetch(url)
       const data = await response.json()
@@ -51,7 +53,8 @@ export default function DeliveryRoutes({ userLocation, isSuperAdmin }: { userLoc
 
   const handleCreateDriver = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/drivers`, {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+      const response = await fetch(`${baseUrl}/admin/drivers`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -99,7 +102,8 @@ export default function DeliveryRoutes({ userLocation, isSuperAdmin }: { userLoc
   const handleAssignRoute = async (route: any, driverId: number) => {
     try {
       const orderIds = route.orders.map((o: any) => o.id)
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/delivery/assign-route`, {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+      const response = await fetch(`${baseUrl}/delivery/assign-route`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
