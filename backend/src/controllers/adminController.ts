@@ -144,6 +144,15 @@ export const getDrivers = async (req: Request, res: Response) => {
 export const createDriver = async (req: Request, res: Response) => {
   try {
     const { username, password, location } = req.body;
+    const admin = (req as any).admin;
+
+    // Location admins can only create drivers for their location
+    // Super admins can create drivers for any location
+    const driverLocation = admin.is_super_admin ? location : admin.location;
+
+    if (!driverLocation) {
+      return res.status(400).json({ error: 'Location is required' });
+    }
 
     const saltRounds = 10;
     const password_hash = await bcrypt.hash(password, saltRounds);
@@ -155,7 +164,7 @@ export const createDriver = async (req: Request, res: Response) => {
         password_hash,
         is_super_admin: false,
         role: 'driver',
-        location // Drivers are location-specific
+        location: driverLocation
       })
       .select('id, username, is_active, role, location, created_at')
       .single();

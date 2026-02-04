@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { loginAdmin, getAllAdmins, createAdmin, updateAdminStatus, deleteAdmin, getDrivers, createDriver } from '../controllers/adminController';
-import { requireSuperAdmin } from '../middleware/superAdminMiddleware';
+import { requireSuperAdmin, requireAdmin } from '../middleware/superAdminMiddleware';
 
 const router = Router();
 
@@ -133,7 +133,7 @@ router.post('/users', requireSuperAdmin, createAdmin);
  *       201:
  *         description: Driver created
  */
-router.post('/drivers', requireSuperAdmin, createDriver);
+router.post('/drivers', requireAdmin, createDriver);
 
 /**
  * @swagger
