@@ -113,6 +113,7 @@ export const getProductById = async (req: Request, res: Response) => {
 export const getProductsByCategory = async (req: Request, res: Response) => {
   try {
     const { categoryId } = req.params;
+    const location = req.query.location as string;
     
     const { data, error } = await supabase
       .from('products')
@@ -124,6 +125,11 @@ export const getProductsByCategory = async (req: Request, res: Response) => {
         weight,
         image_url,
         category_id,
+        inventory_leeds,
+        inventory_derby,
+        inventory_sheffield,
+        has_limit,
+        max_per_order,
         categories (
           name
         )
@@ -133,7 +139,20 @@ export const getProductsByCategory = async (req: Request, res: Response) => {
 
     if (error) throw error;
 
-    res.json(data);
+    // Add location-specific inventory
+    const productsWithInventory = data.map(product => {
+      let inventory = 0;
+      if (location === 'Leeds') inventory = product.inventory_leeds;
+      else if (location === 'Derby') inventory = product.inventory_derby;
+      else if (location === 'Sheffield') inventory = product.inventory_sheffield;
+      
+      return {
+        ...product,
+        inventory
+      };
+    });
+
+    res.json(productsWithInventory);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch products' });
   }
