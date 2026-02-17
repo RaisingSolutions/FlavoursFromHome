@@ -55,14 +55,23 @@ export default function HomePage({
           boxShadow: '0 10px 30px rgba(255, 107, 107, 0.3)'
         }}>
           <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '30px', fontSize: '32px' }}>🔥 Deal of the Week 🔥</h2>
-          <div className="products-grid">
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '20px',
+            flexWrap: 'wrap',
+            maxWidth: deals.length <= 2 ? '800px' : '100%',
+            margin: '0 auto'
+          }}>
             {deals.map((deal: any) => {
               const product = { ...deal.product, price: deal.deal_price, originalPrice: deal.product.price }
               return (
                 <div key={deal.id} className="product-card" style={{
                   border: '3px solid #ffd700',
                   boxShadow: '0 8px 24px rgba(255, 215, 0, 0.4)',
-                  position: 'relative'
+                  position: 'relative',
+                  width: deals.length <= 2 ? '350px' : 'auto',
+                  flex: deals.length <= 2 ? '0 0 auto' : '1'
                 }}>
                   <div style={{
                     position: 'absolute',
