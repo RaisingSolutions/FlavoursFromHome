@@ -219,6 +219,7 @@ body {
   width: 100%;
   height: 200px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .product-image img {
@@ -257,8 +258,7 @@ body {
   font-size: 0.9rem;
   margin-bottom: 1rem;
   line-height: 1.4;
-  min-height: 2.8rem;
-  flex: 1;
+  flex-grow: 1;
 }
 
 .product-details {
@@ -266,6 +266,7 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  margin-top: auto;
 }
 
 .price {
