@@ -242,3 +242,12 @@ export const toggleProductStatus = async (id: number, isActive: boolean) => {
   })
   return response.ok
 }
+
+export const submitStockTransfer = async (fromLocation: string, toLocation: string, items: { product_id: number; quantity: number }[]) => {
+  const response = await fetch(`${BASE_URL}/products/stock-transfer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fromLocation, toLocation, items }),
+  })
+  return response.ok
+}

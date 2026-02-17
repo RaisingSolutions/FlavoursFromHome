@@ -8,6 +8,7 @@ import DriverView from './DriverView'
 import DeliveriesTab from './DeliveriesTab'
 import StockLevelsTab from './StockLevelsTab'
 import FeedbackTab from './FeedbackTab'
+import StockTransferTab from './StockTransferTab'
 
 interface DashboardProps {
   isSuperAdmin: boolean
@@ -88,6 +89,12 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
               >
                 Reviews
               </button>
+              <button 
+                className={`tab ${activeTab === 'transfer' ? 'active' : ''}`}
+                onClick={() => setActiveTab('transfer')}
+              >
+                Stock Transfer
+              </button>
             </div>
 
             <div className="tab-content">
@@ -96,6 +103,7 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
               {activeTab === 'stock' && <StockLevelsTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'deliveries' && <DeliveriesTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'feedback' && <FeedbackTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
+              {activeTab === 'transfer' && <StockTransferTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
             </div>
           </>
         ) : (
@@ -144,6 +152,12 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
               >
                 Feedback
               </button>
+              <button 
+                className={`tab ${activeTab === 'transfer' ? 'active' : ''}`}
+                onClick={() => setActiveTab('transfer')}
+              >
+                Stock Transfer
+              </button>
             </div>
 
             <div className="tab-content">
@@ -154,6 +168,7 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
               {activeTab === 'deliveries' && <DeliveriesTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'delivery' && <DeliveryRoutes userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'feedback' && <FeedbackTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
+              {activeTab === 'transfer' && <StockTransferTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
             </div>
           </>
         )}

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllProducts, getProductById, getProductsByCategory, createProduct, updateProduct, deleteProduct, recordDelivery, getDeliveries, toggleProductStatus } from '../controllers/productController';
+import { getAllProducts, getProductById, getProductsByCategory, createProduct, updateProduct, deleteProduct, recordDelivery, getDeliveries, toggleProductStatus, stockTransfer } from '../controllers/productController';
 
 const router = Router();
 
@@ -148,6 +148,38 @@ router.post('/', createProduct);
  *         description: Delivery recorded
  */
 router.post('/record-delivery', recordDelivery);
+
+/**
+ * @swagger
+ * /api/products/stock-transfer:
+ *   post:
+ *     summary: Transfer stock between locations
+ *     tags: [Products]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fromLocation:
+ *                 type: string
+ *               toLocation:
+ *                 type: string
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     product_id:
+ *                       type: integer
+ *                     quantity:
+ *                       type: integer
+ *     responses:
+ *       200:
+ *         description: Stock transfer completed
+ */
+router.post('/stock-transfer', stockTransfer);
 
 /**
  * @swagger

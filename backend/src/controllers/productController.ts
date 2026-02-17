@@ -270,6 +270,42 @@ export const toggleProductStatus = async (req: Request, res: Response) => {
   }
 };
 
+export const stockTransfer = async (req: Request, res: Response) => {
+  try {
+    const { fromLocation, toLocation, items } = req.body;
+
+    for (const item of items) {
+      const { data: product } = await supabase
+        .from('products')
+        .select('inventory_leeds, inventory_derby, inventory_sheffield')
+        .eq('id', item.product_id)
+        .single();
+
+      if (!product) continue;
+
+      const updateData: any = {};
+      
+      if (fromLocation === 'Leeds') updateData.inventory_leeds = product.inventory_leeds - item.quantity;
+      else if (fromLocation === 'Derby') updateData.inventory_derby = product.inventory_derby - item.quantity;
+      else if (fromLocation === 'Sheffield') updateData.inventory_sheffield = product.inventory_sheffield - item.quantity;
+      
+      if (toLocation === 'Leeds') updateData.inventory_leeds = (updateData.inventory_leeds !== undefined ? updateData.inventory_leeds : product.inventory_leeds) + item.quantity;
+      else if (toLocation === 'Derby') updateData.inventory_derby = (updateData.inventory_derby !== undefined ? updateData.inventory_derby : product.inventory_derby) + item.quantity;
+      else if (toLocation === 'Sheffield') updateData.inventory_sheffield = (updateData.inventory_sheffield !== undefined ? updateData.inventory_sheffield : product.inventory_sheffield) + item.quantity;
+
+      await supabase
+        .from('products')
+        .update(updateData)
+        .eq('id', item.product_id);
+    }
+
+    res.json({ success: true, message: 'Stock transfer completed' });
+  } catch (error: any) {
+    console.error('Stock transfer error:', error);
+    res.status(400).json({ error: 'Failed to complete stock transfer', details: error.message });
+  }
+};
+
 export const recordDelivery = async (req: Request, res: Response) => {
   try {
     const { deliveryDate, items, location } = req.body;
