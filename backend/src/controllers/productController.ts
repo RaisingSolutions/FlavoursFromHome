@@ -274,6 +274,19 @@ export const stockTransfer = async (req: Request, res: Response) => {
   try {
     const { fromLocation, toLocation, items } = req.body;
 
+    // Create delivery record for the transfer
+    const { data: delivery, error: deliveryError } = await supabase
+      .from('deliveries')
+      .insert({ 
+        delivery_date: new Date().toISOString(),
+        location: toLocation,
+        transfer_from: fromLocation
+      })
+      .select()
+      .single();
+
+    if (deliveryError) throw deliveryError;
+
     for (const item of items) {
       const { data: product } = await supabase
         .from('products')
@@ -282,6 +295,15 @@ export const stockTransfer = async (req: Request, res: Response) => {
         .single();
 
       if (!product) continue;
+
+      // Save delivery item for the transfer
+      await supabase
+        .from('delivery_items')
+        .insert({
+          delivery_id: delivery.id,
+          product_id: item.product_id,
+          quantity: item.quantity
+        });
 
       const updateData: any = {};
       
@@ -370,6 +392,7 @@ export const getDeliveries = async (req: Request, res: Response) => {
         id,
         delivery_date,
         location,
+        transfer_from,
         delivery_items (
           quantity,
           products (

@@ -73,74 +73,82 @@ export default function StockTransferTab() {
     <div className="stock-transfer-section">
       <div className="section-header">
         <h2>Stock Transfer</h2>
+        <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>Transfer inventory between locations</p>
       </div>
 
       <div className="transfer-form">
         <div className="transfer-locations">
-          <div>
+          <div className="location-select-wrapper">
             <label>From Location</label>
-            <select value={fromLocation} onChange={(e) => setFromLocation(e.target.value)}>
-              <option value="">Select Location</option>
+            <select value={fromLocation} onChange={(e) => setFromLocation(e.target.value)} className="styled-select">
+              <option value="">Select Source Location</option>
               {locations.map(loc => (
-                <option key={loc} value={loc}>{loc}</option>
+                <option key={loc} value={loc}>📍 {loc}</option>
               ))}
             </select>
           </div>
-          <div>
+          <div className="transfer-arrow">→</div>
+          <div className="location-select-wrapper">
             <label>To Location</label>
-            <select value={toLocation} onChange={(e) => setToLocation(e.target.value)}>
-              <option value="">Select Location</option>
+            <select value={toLocation} onChange={(e) => setToLocation(e.target.value)} className="styled-select">
+              <option value="">Select Destination Location</option>
               {locations.map(loc => (
-                <option key={loc} value={loc}>{loc}</option>
+                <option key={loc} value={loc}>📍 {loc}</option>
               ))}
             </select>
           </div>
         </div>
 
-        <div className="transfer-product-input">
-          <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
-            <option value="">Select Product</option>
-            {products.map(product => (
-              <option key={product.id} value={product.id}>
-                {product.name} (L:{product.inventory_leeds} D:{product.inventory_derby} S:{product.inventory_sheffield})
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            min="1"
-            placeholder="Quantity"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-          />
-          <button className="create-btn" onClick={addTransferItem}>Add</button>
+        <div className="add-product-section">
+          <h3>Add Products to Transfer</h3>
+          <div className="transfer-product-input">
+            <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} className="styled-select">
+              <option value="">Select Product</option>
+              {products.map(product => (
+                <option key={product.id} value={product.id}>
+                  {product.name} • Leeds: {product.inventory_leeds} | Derby: {product.inventory_derby} | Sheffield: {product.inventory_sheffield}
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              min="1"
+              placeholder="Quantity"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              className="quantity-input"
+            />
+            <button className="create-btn add-item-btn" onClick={addTransferItem}>+ Add Item</button>
+          </div>
         </div>
 
         {transferItems.length > 0 && (
           <div className="transfer-items">
-            <h3>Transfer Items</h3>
-            <table className="orders-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Quantity</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transferItems.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item.product_name}</td>
-                    <td>{item.quantity}</td>
-                    <td>
-                      <button className="delete-btn" onClick={() => removeTransferItem(index)}>Remove</button>
-                    </td>
+            <h3>📦 Items to Transfer ({transferItems.length})</h3>
+            <div className="orders-table-container">
+              <table className="orders-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            <button className="create-btn" style={{ marginTop: '20px', width: '100%' }} onClick={handleSubmit}>
-              Submit Transfer
+                </thead>
+                <tbody>
+                  {transferItems.map((item, index) => (
+                    <tr key={index}>
+                      <td className="customer-name">{item.product_name}</td>
+                      <td className="total">x{item.quantity}</td>
+                      <td>
+                        <button className="delete-btn" onClick={() => removeTransferItem(index)}>Remove</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button className="create-btn submit-transfer-btn" onClick={handleSubmit}>
+              ✅ Submit Transfer
             </button>
           </div>
         )}

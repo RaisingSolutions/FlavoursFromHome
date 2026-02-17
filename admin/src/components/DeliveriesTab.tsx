@@ -131,6 +131,11 @@ export default function DeliveriesTab({ userLocation, isSuperAdmin }: { userLoca
                 <tr key={idx}>
                   <td style={{ padding: '15px', border: '1px solid #ddd', fontWeight: 'bold' }}>
                     {new Date(delivery.delivery_date).toLocaleDateString()}
+                    {delivery.transfer_from && (
+                      <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                        Transfer from: {delivery.transfer_from}
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: '15px', border: '1px solid #ddd' }}>
                     {delivery.items.map((item: any, i: number) => (
