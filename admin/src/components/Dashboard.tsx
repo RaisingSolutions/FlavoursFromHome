@@ -9,6 +9,7 @@ import DeliveriesTab from './DeliveriesTab'
 import StockLevelsTab from './StockLevelsTab'
 import FeedbackTab from './FeedbackTab'
 import StockTransferTab from './StockTransferTab'
+import DealOfTheWeekTab from './DealOfTheWeekTab'
 
 interface DashboardProps {
   isSuperAdmin: boolean
@@ -95,6 +96,12 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
               >
                 Stock Transfer
               </button>
+              <button 
+                className={`tab ${activeTab === 'deals' ? 'active' : ''}`}
+                onClick={() => setActiveTab('deals')}
+              >
+                Deal of the Week
+              </button>
             </div>
 
             <div className="tab-content">
@@ -104,6 +111,7 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
               {activeTab === 'deliveries' && <DeliveriesTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'feedback' && <FeedbackTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'transfer' && <StockTransferTab />}
+              {activeTab === 'deals' && <DealOfTheWeekTab />}
             </div>
           </>
         ) : (
@@ -158,6 +166,12 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
               >
                 Stock Transfer
               </button>
+              <button 
+                className={`tab ${activeTab === 'deals' ? 'active' : ''}`}
+                onClick={() => setActiveTab('deals')}
+              >
+                Deal of the Week
+              </button>
             </div>
 
             <div className="tab-content">
@@ -169,6 +183,7 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
               {activeTab === 'delivery' && <DeliveryRoutes userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'feedback' && <FeedbackTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'transfer' && <StockTransferTab />}
+              {activeTab === 'deals' && <DealOfTheWeekTab />}
             </div>
           </>
         )}

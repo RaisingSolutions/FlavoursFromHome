@@ -21,6 +21,7 @@ interface CartItem {
 function App() {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
+  const [deals, setDeals] = useState([])
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [location, setLocation] = useState<string>(() => {
@@ -64,6 +65,7 @@ function App() {
   useEffect(() => {
     fetchCategories()
     fetchProducts()
+    fetchDeals()
   }, [location])
 
   useEffect(() => {
@@ -92,6 +94,15 @@ function App() {
       setProducts(data)
     } catch (err) {
       console.error('Failed to fetch products')
+    }
+  }
+
+  const fetchDeals = async () => {
+    try {
+      const data = await API.fetchDeals()
+      setDeals(data)
+    } catch (err) {
+      console.error('Failed to fetch deals')
     }
   }
 
@@ -207,6 +218,7 @@ function App() {
             <HomePage 
               categories={categories}
               products={products}
+              deals={deals}
               selectedCategory={selectedCategory}
               cart={cart}
               location={location}

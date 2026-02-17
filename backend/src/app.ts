@@ -10,6 +10,7 @@ import orderRoutes from './routes/orderRoutes';
 import deliveryRoutes from './routes/deliveryRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import feedbackRoutes from './routes/feedbackRoutes';
+import dealRoutes from './routes/dealRoutes';
 
 const app = express();
 
@@ -37,5 +38,6 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/deals', dealRoutes);
 
 export default app;

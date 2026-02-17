@@ -20,3 +20,8 @@ export const fetchProductsByCategory = async (categoryId: number, location?: str
   const response = await fetch(url)
   return response.json()
 }
+
+export const fetchDeals = async () => {
+  const response = await fetch(`${BASE_URL}/deals`)
+  return response.json()
+}

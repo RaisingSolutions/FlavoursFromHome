@@ -243,6 +243,27 @@ export const toggleProductStatus = async (id: number, isActive: boolean) => {
   return response.ok
 }
 
+export const fetchDeals = async () => {
+  const response = await fetch(`${BASE_URL}/deals`)
+  return response.json()
+}
+
+export const createDeal = async (productId: number, dealPrice: number) => {
+  const response = await fetch(`${BASE_URL}/deals`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ product_id: productId, deal_price: dealPrice }),
+  })
+  return response.ok
+}
+
+export const deleteDeal = async (id: number) => {
+  const response = await fetch(`${BASE_URL}/deals/${id}`, {
+    method: 'DELETE',
+  })
+  return response.ok
+}
+
 export const submitStockTransfer = async (fromLocation: string, toLocation: string, items: { product_id: number; quantity: number }[]) => {
   const response = await fetch(`${BASE_URL}/products/stock-transfer`, {
     method: 'POST',

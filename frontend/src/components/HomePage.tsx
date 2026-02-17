@@ -3,6 +3,7 @@ import LocationSelector from './LocationSelector'
 interface HomePageProps {
   categories: any[]
   products: any[]
+  deals: any[]
   selectedCategory: number | null
   cart: any[]
   location: string
@@ -15,7 +16,8 @@ interface HomePageProps {
 
 export default function HomePage({ 
   categories, 
-  products, 
+  products,
+  deals,
   selectedCategory, 
   cart,
   location,
@@ -43,6 +45,91 @@ export default function HomePage({
           </div>
         </div>
       </section>
+
+      {deals.length > 0 && (
+        <section className="deals-section" style={{
+          background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
+          padding: '40px 20px',
+          borderRadius: '16px',
+          margin: '40px 0',
+          boxShadow: '0 10px 30px rgba(255, 107, 107, 0.3)'
+        }}>
+          <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '30px', fontSize: '32px' }}>🔥 Deal of the Week 🔥</h2>
+          <div className="products-grid">
+            {deals.map((deal: any) => {
+              const product = { ...deal.product, price: deal.deal_price, originalPrice: deal.product.price }
+              return (
+                <div key={deal.id} className="product-card" style={{
+                  border: '3px solid #ffd700',
+                  boxShadow: '0 8px 24px rgba(255, 215, 0, 0.4)',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: '#ffd700',
+                    color: '#000',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    zIndex: 1
+                  }}>
+                    {Math.round(((deal.product.price - deal.deal_price) / deal.product.price) * 100)}% OFF
+                  </div>
+                  <div className="product-image">
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} />
+                    ) : (
+                      <div className="placeholder-image">
+                        <span>No Image</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="product-info">
+                    <h3>{product.name}</h3>
+                    <p className="product-description">{product.description}</p>
+                    <div className="product-details">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ textDecoration: 'line-through', color: '#999', fontSize: '16px' }}>£{product.originalPrice}</span>
+                        <span className="price" style={{ fontSize: '24px' }}>£{product.price}</span>
+                      </div>
+                      <span className="weight">{product.weight}</span>
+                    </div>
+                    {cart.find(item => item.id === product.id) ? (
+                      <div className="quantity-controls">
+                        <button 
+                          className="qty-btn"
+                          onClick={() => onUpdateQuantity(product.id, -1)}
+                        >
+                          -
+                        </button>
+                        <span className="quantity">
+                          {cart.find(item => item.id === product.id)?.quantity}
+                        </span>
+                        <button 
+                          className="qty-btn"
+                          onClick={() => onUpdateQuantity(product.id, 1)}
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        className="add-to-cart-btn"
+                        onClick={() => onAddToCart(product)}
+                      >
+                        Add to Cart
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="categories">
         <h2>Shop by Category</h2>
