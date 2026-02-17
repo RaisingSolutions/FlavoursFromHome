@@ -103,7 +103,7 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
               {activeTab === 'stock' && <StockLevelsTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'deliveries' && <DeliveriesTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'feedback' && <FeedbackTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
-              {activeTab === 'transfer' && <StockTransferTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
+              {activeTab === 'transfer' && <StockTransferTab />}
             </div>
           </>
         ) : (
@@ -168,7 +168,7 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
               {activeTab === 'deliveries' && <DeliveriesTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'delivery' && <DeliveryRoutes userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'feedback' && <FeedbackTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
-              {activeTab === 'transfer' && <StockTransferTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
+              {activeTab === 'transfer' && <StockTransferTab />}
             </div>
           </>
         )}

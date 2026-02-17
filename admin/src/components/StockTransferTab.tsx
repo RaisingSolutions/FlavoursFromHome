@@ -2,12 +2,7 @@
 import { useState, useEffect } from 'react'
 import * as API from '../APIS'
 
-interface StockTransferTabProps {
-  userLocation: string | null
-  isSuperAdmin: boolean
-}
-
-export default function StockTransferTab({ userLocation, isSuperAdmin }: StockTransferTabProps) {
+export default function StockTransferTab() {
   const [products, setProducts] = useState<any[]>([])
   const [fromLocation, setFromLocation] = useState('')
   const [toLocation, setToLocation] = useState('')
@@ -17,18 +12,18 @@ export default function StockTransferTab({ userLocation, isSuperAdmin }: StockTr
 
   const locations = ['Leeds', 'Derby', 'Sheffield']
 
-  useEffect(() => {
-    fetchProducts()
-  }, [])
-
   const fetchProducts = async () => {
     try {
       const data = await API.fetchProducts()
       setProducts(data)
-    } catch (err) {
+    } catch {
       console.error('Failed to fetch products')
     }
   }
+
+  useEffect(() => {
+    fetchProducts()
+  }, [])
 
   const addTransferItem = () => {
     if (!selectedProduct || !quantity || parseInt(quantity) <= 0) return
@@ -69,7 +64,7 @@ export default function StockTransferTab({ userLocation, isSuperAdmin }: StockTr
         setTransferItems([])
         fetchProducts()
       }
-    } catch (err) {
+    } catch {
       alert('Failed to complete stock transfer')
     }
   }
