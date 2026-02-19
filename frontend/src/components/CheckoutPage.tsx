@@ -91,7 +91,7 @@ export default function CheckoutPage({
     try {
       // Using getAddress.io API - you need to add your API key in .env
       const apiKey = import.meta.env.VITE_GETADDRESS_API_KEY || 'demo'
-      const response = await fetch(`https://api.getAddress.io/find/${postcode.replace(/\s/g, '')}?api-key=${apiKey}&expand=true`)
+      const response = await fetch(`https://api.getaddress.io/find/${postcode.replace(/\s/g, '')}?api-key=${apiKey}&expand=true`)
       const data = await response.json()
       console.log('Address API response:', data)
       
