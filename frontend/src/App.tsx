@@ -176,17 +176,25 @@ function App() {
       <FeedbackPage />
     ) : (
       <div className="app">
-        <nav className="navbar">
-          <div className="navbar-brand" onClick={() => setCurrentPage('home')} style={{ cursor: 'pointer' }}>
-            <img src="https://res.cloudinary.com/dulm4r5mo/image/upload/v1763129727/FFH_Logo_f47yft.png" alt="FFH Logo" className="navbar-logo" />
-            Flavours From Home
+        <div className="navbar-container">
+          <nav className="navbar">
+            <div className="navbar-brand" onClick={() => setCurrentPage('home')} style={{ cursor: 'pointer' }}>
+              <img src="https://res.cloudinary.com/dulm4r5mo/image/upload/v1763129727/FFH_Logo_f47yft.png" alt="FFH Logo" className="navbar-logo" />
+              Flavours From Home
+            </div>
+            <div className="navbar-actions">
+              <button className="cart-btn" onClick={() => setCurrentPage('cart')}>
+                🛒 Cart ({cartCount})
+              </button>
+            </div>
+          </nav>
+          
+          <div className="delivery-notice">
+            <div className="delivery-notice-content">
+              📦 We deliver all orders on Wednesdays and Saturdays depending on when you order. Thanks for choosing Flavours From Home! 🙏
+            </div>
           </div>
-          <div className="navbar-actions">
-            <button className="cart-btn" onClick={() => setCurrentPage('cart')}>
-              🛒 Cart ({cartCount})
-            </button>
-          </div>
-        </nav>
+        </div>
         
         <main className="main-content">
           {currentPage === 'success' ? (
