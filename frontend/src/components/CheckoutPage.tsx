@@ -227,17 +227,44 @@ export default function CheckoutPage({
             {orderType === 'delivery' && (
               <>
                 <div className="form-group">
-                  <label htmlFor="address">Delivery Address *</label>
-                  <textarea
-                    id="address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Enter your full delivery address"
-                    required
-                    rows={3}
-                  />
+                  <label htmlFor="postcode">Postcode *</label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input
+                      type="text"
+                      id="postcode"
+                      value={postcode}
+                      onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+                      placeholder="e.g. LS17 8RX, DE1 1AA, S1 1AA"
+                      style={{ flex: 1 }}
+                    />
+                    <button 
+                      type="button" 
+                      className="btn-primary"
+                      onClick={handleSearchAddress}
+                      disabled={searchingAddress}
+                    >
+                      {searchingAddress ? 'Searching...' : 'Search'}
+                    </button>
+                  </div>
                   <small style={{ color: '#666', fontSize: '0.85rem' }}>We deliver to Leeds (LS), Derby (DE), and Sheffield (S) only</small>
                 </div>
+
+                {addresses.length > 0 && (
+                  <div className="form-group">
+                    <label htmlFor="address">Select Your Address *</label>
+                    <select
+                      id="address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      required
+                      style={{ width: '100%', padding: '12px' }}
+                    >
+                      {addresses.map((addr, idx) => (
+                        <option key={idx} value={addr}>{addr}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </>
             )}
             {orderType === 'collection' && (
