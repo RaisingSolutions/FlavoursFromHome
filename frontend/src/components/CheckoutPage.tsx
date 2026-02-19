@@ -90,7 +90,7 @@ export default function CheckoutPage({
     setSearchingAddress(true)
     try {
       // Using getAddress.io API
-      const apiKey = 'dtoken_hEDzcyiWMr3J2jcP3WN8Bv46W0NdDQCPHHta1EW0W7KW7ixM9pmCzI1eyhADhPZyB5ACEJ89VEYSdhUOHZ9_CJ5hheFTBVJZlJHiKrKbjE1BJrqwdwmDIngMwUcvAtOjGAYXEU79KCpuI9X2o2GiQGR-IoRDmOTqmNUiX-HYnFXmCsVaq3Qjik2v51P2eQg80v1Tj6gTEXkNGdlgm_GuD2DFceFExVIL'
+      const apiKey = 'jXKGUFTLcE2EMUJbkLtrhA49594'
       const response = await fetch(`https://api.getaddress.io/find/${postcode.replace(/\s/g, '')}?api-key=${apiKey}&expand=true`)
       const data = await response.json()
       console.log('Address API response:', data)
