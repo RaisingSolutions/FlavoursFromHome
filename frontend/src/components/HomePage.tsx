@@ -54,7 +54,7 @@ export default function HomePage({
           margin: '40px 0',
           boxShadow: '0 10px 30px rgba(255, 107, 107, 0.3)'
         }}>
-          <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '30px', fontSize: '32px' }}>🔥 Deal of the Week 🔥</h2>
+          <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '30px', fontSize: '32px' }}>🔥 Deal of the Week! 🔥</h2>
           <div style={{
             display: 'flex',
             justifyContent: 'center',
