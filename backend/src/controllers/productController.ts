@@ -23,6 +23,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
         is_active,
         has_limit,
         max_per_order,
+        origin,
         categories (
           name
         )
@@ -130,6 +131,7 @@ export const getProductsByCategory = async (req: Request, res: Response) => {
         inventory_sheffield,
         has_limit,
         max_per_order,
+        origin,
         categories (
           name
         )
@@ -160,7 +162,7 @@ export const getProductsByCategory = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { name, description, price, category_id, weight, image_url, inventory_leeds, inventory_derby, inventory_sheffield, has_limit, max_per_order } = req.body;
+    const { name, description, price, category_id, weight, image_url, inventory_leeds, inventory_derby, inventory_sheffield, has_limit, max_per_order, origin } = req.body;
     
     const { data, error } = await supabase
       .from('products')
@@ -175,7 +177,8 @@ export const createProduct = async (req: Request, res: Response) => {
         inventory_derby: inventory_derby || 0,
         inventory_sheffield: inventory_sheffield || 0,
         has_limit: has_limit || false,
-        max_per_order: max_per_order || null
+        max_per_order: max_per_order || null,
+        origin: origin || null
       })
       .select()
       .single();
@@ -191,7 +194,7 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, price, category_id, weight, image_url, inventory_leeds, inventory_derby, inventory_sheffield, has_limit, max_per_order } = req.body;
+    const { name, description, price, category_id, weight, image_url, inventory_leeds, inventory_derby, inventory_sheffield, has_limit, max_per_order, origin } = req.body;
     
     const { data, error } = await supabase
       .from('products')
@@ -207,6 +210,7 @@ export const updateProduct = async (req: Request, res: Response) => {
         inventory_sheffield,
         has_limit,
         max_per_order,
+        origin,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)

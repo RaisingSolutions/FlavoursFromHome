@@ -23,7 +23,8 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
     inventory_derby: '', 
     inventory_sheffield: '', 
     has_limit: false, 
-    max_per_order: '' 
+    max_per_order: '',
+    origin: ''
   })
 
   const fetchProducts = async () => {
@@ -66,7 +67,8 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
           inventory_derby: parseInt(formData.inventory_derby) || 0,
           inventory_sheffield: parseInt(formData.inventory_sheffield) || 0,
           has_limit: formData.has_limit,
-          max_per_order: formData.max_per_order ? parseInt(formData.max_per_order) : null
+          max_per_order: formData.max_per_order ? parseInt(formData.max_per_order) : null,
+          origin: formData.origin || null
         })
       })
       
@@ -93,7 +95,8 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
       inventory_derby: item.inventory_derby?.toString() || '0',
       inventory_sheffield: item.inventory_sheffield?.toString() || '0',
       has_limit: item.has_limit || false,
-      max_per_order: item.max_per_order?.toString() || ''
+      max_per_order: item.max_per_order?.toString() || '',
+      origin: item.origin || ''
     })
     setShowCreateForm(true)
   }
@@ -115,7 +118,8 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
           inventory_derby: parseInt(formData.inventory_derby),
           inventory_sheffield: parseInt(formData.inventory_sheffield),
           has_limit: formData.has_limit,
-          max_per_order: formData.max_per_order ? parseInt(formData.max_per_order) : null
+          max_per_order: formData.max_per_order ? parseInt(formData.max_per_order) : null,
+          origin: formData.origin || null
         })
       })
       
@@ -162,7 +166,7 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
         <button className="create-btn" onClick={() => {
           setShowCreateForm(true)
           setEditingItem(null)
-          setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory_leeds: '', inventory_derby: '', inventory_sheffield: '', has_limit: false, max_per_order: '' })
+          setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory_leeds: '', inventory_derby: '', inventory_sheffield: '', has_limit: false, max_per_order: '', origin: '' })
         }}>Create Product</button>
       </div>
       
@@ -239,6 +243,12 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
             value={formData.image_url}
             onChange={(e) => setFormData({...formData, image_url: e.target.value})}
           />
+          <input
+            type="text"
+            placeholder="Origin (optional)"
+            value={formData.origin}
+            onChange={(e) => setFormData({...formData, origin: e.target.value})}
+          />
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <input
@@ -266,7 +276,7 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
             <button className="cancel-btn" onClick={() => {
               setShowCreateForm(false)
               setEditingItem(null)
-              setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory_leeds: '', inventory_derby: '', inventory_sheffield: '', has_limit: false, max_per_order: '' })
+              setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory_leeds: '', inventory_derby: '', inventory_sheffield: '', has_limit: false, max_per_order: '', origin: '' })
             }}>Cancel</button>
           </div>
         </div>
@@ -299,6 +309,19 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
                 Stock: {getInventoryForLocation(product)}
               </span>
             </div>
+            {product.origin && (
+              <div className="origin" style={{ 
+                backgroundColor: 'green', 
+                color: 'white',
+                textAlign: 'center',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                margin: '5px 0',
+                fontSize: '12px'
+              }}>
+                Origin: {product.origin}
+              </div>
+            )}
             <div className="item-actions">
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                 <input

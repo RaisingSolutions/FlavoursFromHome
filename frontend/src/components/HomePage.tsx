@@ -184,86 +184,104 @@ export default function HomePage({
           </div>
         ) : (
           <div className="products-grid">
-            {products.map((product: any) => (
-            <div key={product.id} className="product-card" style={{
-              opacity: product.inventory === 0 ? 0.6 : 1,
-              filter: product.inventory === 0 ? 'grayscale(50%)' : 'none'
-            }}>
-              <div className="product-image">
-                {product.image_url ? (
-                  <img src={product.image_url} alt={product.name} />
-                ) : (
-                  <div className="placeholder-image">
-                    <span>No Image</span>
+            {products.map((product: any) => {
+              // Debug: log product to see if origin exists
+              if (product.origin) console.log('Product with origin:', product.name, product.origin);
+              
+              return (
+                <div key={product.id} className="product-card" style={{
+                  opacity: product.inventory === 0 ? 0.6 : 1,
+                  filter: product.inventory === 0 ? 'grayscale(50%)' : 'none'
+                }}>
+                  <div className="product-image">
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} />
+                    ) : (
+                      <div className="placeholder-image">
+                        <span>No Image</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="product-info">
-                <h3>{product.name}</h3>
-                <p className="product-description">{product.description}</p>
-                {product.average_rating && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', margin: '8px 0' }}>
-                    <span style={{ color: '#ffc107', fontSize: '16px' }}>
-                      {'★'.repeat(Math.round(product.average_rating))}{'☆'.repeat(5 - Math.round(product.average_rating))}
-                    </span>
-                    <span style={{ fontSize: '14px', color: '#666' }}>({product.rating_count})</span>
+                  <div className="product-info">
+                    <h3>{product.name}</h3>
+                    <p className="product-description">{product.description}</p>
+                    {product.average_rating && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', margin: '8px 0' }}>
+                        <span style={{ color: '#ffc107', fontSize: '16px' }}>
+                          {'★'.repeat(Math.round(product.average_rating))}{'☆'.repeat(5 - Math.round(product.average_rating))}
+                        </span>
+                        <span style={{ fontSize: '14px', color: '#666' }}>({product.rating_count})</span>
+                      </div>
+                    )}
+                    <div className="product-details">
+                      <span className="price">£{product.price}</span>
+                      <span className="weight">{product.weight}</span>
+                      {product.inventory > 0 && product.inventory <= 10 && (
+                        <span style={{ color: '#ff6b6b', fontWeight: 'bold', fontSize: '12px' }}>{product.inventory} left</span>
+                      )}
+                      {product.inventory === 0 && (
+                        <span style={{ 
+                          background: '#ff6b6b', 
+                          color: 'white', 
+                          padding: '4px 8px', 
+                          borderRadius: '4px',
+                          fontWeight: 'bold', 
+                          fontSize: '11px' 
+                        }}>SOLD OUT</span>
+                      )}
+                    </div>
+                    {product.origin && (
+                      <div className="origin" style={{ 
+                        backgroundColor: 'green', 
+                        color: 'white',
+                        textAlign: 'center',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        margin: '5px 0',
+                        fontSize: '12px'
+                      }}>
+                        Origin: {product.origin}
+                      </div>
+                    )}
+                    {cart.find(item => item.id === product.id) ? (
+                      <div className="quantity-controls">
+                        <button 
+                          className="qty-btn"
+                          onClick={() => onUpdateQuantity(product.id, -1)}
+                        >
+                          -
+                        </button>
+                        <span className="quantity">
+                          {cart.find(item => item.id === product.id)?.quantity}
+                        </span>
+                        <button 
+                          className="qty-btn"
+                          onClick={() => {
+                            const item = cart.find(i => i.id === product.id)
+                            if (product.has_limit && item && item.quantity >= product.max_per_order) {
+                              onShowToast(`Max ${product.max_per_order} ${product.name} per order`, 'error')
+                            } else {
+                              onUpdateQuantity(product.id, 1)
+                            }
+                          }}
+                          disabled={cart.find(item => item.id === product.id)?.quantity >= product.inventory}
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        className="add-to-cart-btn"
+                        onClick={() => onAddToCart(product)}
+                        disabled={product.inventory === 0}
+                      >
+                        {product.inventory === 0 ? 'Out of Stock' : 'Add to Cart'}
+                      </button>
+                    )}
                   </div>
-                )}
-                <div className="product-details">
-                  <span className="price">£{product.price}</span>
-                  <span className="weight">{product.weight}</span>
-                  {product.inventory > 0 && product.inventory <= 10 && (
-                    <span style={{ color: '#ff6b6b', fontWeight: 'bold', fontSize: '12px' }}>{product.inventory} left</span>
-                  )}
-                  {product.inventory === 0 && (
-                    <span style={{ 
-                      background: '#ff6b6b', 
-                      color: 'white', 
-                      padding: '4px 8px', 
-                      borderRadius: '4px',
-                      fontWeight: 'bold', 
-                      fontSize: '11px' 
-                    }}>SOLD OUT</span>
-                  )}
                 </div>
-                {cart.find(item => item.id === product.id) ? (
-                  <div className="quantity-controls">
-                    <button 
-                      className="qty-btn"
-                      onClick={() => onUpdateQuantity(product.id, -1)}
-                    >
-                      -
-                    </button>
-                    <span className="quantity">
-                      {cart.find(item => item.id === product.id)?.quantity}
-                    </span>
-                    <button 
-                      className="qty-btn"
-                      onClick={() => {
-                        const item = cart.find(i => i.id === product.id)
-                        if (product.has_limit && item && item.quantity >= product.max_per_order) {
-                          onShowToast(`Max ${product.max_per_order} ${product.name} per order`, 'error')
-                        } else {
-                          onUpdateQuantity(product.id, 1)
-                        }
-                      }}
-                      disabled={cart.find(item => item.id === product.id)?.quantity >= product.inventory}
-                    >
-                      +
-                    </button>
-                  </div>
-                ) : (
-                  <button 
-                    className="add-to-cart-btn"
-                    onClick={() => onAddToCart(product)}
-                    disabled={product.inventory === 0}
-                  >
-                    {product.inventory === 0 ? 'Out of Stock' : 'Add to Cart'}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+              )
+            })}
           </div>
         )}
       </section>
