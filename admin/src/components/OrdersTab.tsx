@@ -4,7 +4,7 @@ import * as API from '../APIS'
 
 export default function OrdersTab({ userLocation, isSuperAdmin }: { userLocation: string | null, isSuperAdmin: boolean }) {
   const [orders, setOrders] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState<'pending' | 'ready' | 'out_for_delivery' | 'delivered'>('pending')
+  const [activeTab, setActiveTab] = useState<'pending' | 'ready' | 'out_for_delivery' | 'delivered' | 'pending_collection'>('pending')
 
   const fetchOrders = async () => {
     try {
@@ -53,11 +53,17 @@ export default function OrdersTab({ userLocation, isSuperAdmin }: { userLocation
   };
 
   const filteredOrders = orders.filter((order: any) => {
+    if (activeTab === 'pending_collection') {
+      return order.status === 'pending' && order.address === 'Collection'
+    }
     if (activeTab === 'out_for_delivery') {
       return order.status === 'ready' && order.driver_id
     }
     if (activeTab === 'ready') {
       return order.status === 'ready' && !order.driver_id
+    }
+    if (activeTab === 'pending') {
+      return order.status === 'pending' && order.address !== 'Collection'
     }
     return order.status === activeTab
   })
@@ -73,7 +79,13 @@ export default function OrdersTab({ userLocation, isSuperAdmin }: { userLocation
           className={`orders-tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
           onClick={() => setActiveTab('pending')}
         >
-          Pending Orders
+          Pending Delivery
+        </button>
+        <button 
+          className={`orders-tab-btn ${activeTab === 'pending_collection' ? 'active' : ''}`}
+          onClick={() => setActiveTab('pending_collection')}
+        >
+          Pending Collection
         </button>
         <button 
           className={`orders-tab-btn ${activeTab === 'ready' ? 'active' : ''}`}
@@ -91,7 +103,7 @@ export default function OrdersTab({ userLocation, isSuperAdmin }: { userLocation
           className={`orders-tab-btn ${activeTab === 'delivered' ? 'active' : ''}`}
           onClick={() => setActiveTab('delivered')}
         >
-          Delivered Orders
+          Delivered/Collected
         </button>
       </div>
       
@@ -150,7 +162,7 @@ export default function OrdersTab({ userLocation, isSuperAdmin }: { userLocation
                     <td className="customer-name">{order.driver_username || 'Assigned'}</td>
                   )}
                   <td className="actions-cell">
-                    {order.status === 'pending' && (
+                    {order.status === 'pending' && order.address !== 'Collection' && (
                       <>
                         <button 
                           className="action-btn ready-btn"
@@ -166,6 +178,14 @@ export default function OrdersTab({ userLocation, isSuperAdmin }: { userLocation
                           Cancel & Refund
                         </button>
                       </>
+                    )}
+                    {activeTab === 'pending_collection' && (
+                      <button 
+                        className="action-btn delivered-btn"
+                        onClick={() => handleStatusUpdate(order.id, 'delivered')}
+                      >
+                        Mark as Collected
+                      </button>
                     )}
                     {activeTab === 'out_for_delivery' && (
                       <button 

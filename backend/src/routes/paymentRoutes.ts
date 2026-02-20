@@ -1,5 +1,5 @@
 import express from 'express';
-import { createCheckoutSession, handleWebhook, verifyCoupon } from '../controllers/paymentController';
+import { createCheckoutSession, handleWebhook, verifyCoupon, getTestCoupons, createTestCoupon, deleteTestCoupon } from '../controllers/paymentController';
 
 const router = express.Router();
 
@@ -89,6 +89,10 @@ router.post('/webhook', handleWebhook);
  *                   type: number
  */
 router.post('/verify-coupon', verifyCoupon);
+
+router.get('/test-coupons', getTestCoupons);
+router.post('/test-coupons', createTestCoupon);
+router.delete('/test-coupons/:id', deleteTestCoupon);
 
 // Test endpoint to complete order without webhook (for local testing)
 router.post('/complete-order-test', async (req, res) => {

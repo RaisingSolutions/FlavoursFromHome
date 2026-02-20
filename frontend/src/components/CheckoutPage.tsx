@@ -43,7 +43,7 @@ export default function CheckoutPage({
   }, 0)
   const discount = appliedCoupon ? appliedCoupon.amount : 0
   const finalAmount = Math.max(0, totalAmount - discount)
-  const isDeliveryMinimumMet = finalAmount >= 20
+  const isDeliveryMinimumMet = totalAmount >= 20
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return

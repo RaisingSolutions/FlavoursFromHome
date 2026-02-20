@@ -10,6 +10,7 @@ import StockLevelsTab from './StockLevelsTab'
 import FeedbackTab from './FeedbackTab'
 import StockTransferTab from './StockTransferTab'
 import DealOfTheWeekTab from './DealOfTheWeekTab'
+import TestCouponsTab from './TestCouponsTab'
 
 interface DashboardProps {
   isSuperAdmin: boolean
@@ -102,6 +103,12 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
               >
                 Deal of the Week
               </button>
+              <button 
+                className={`tab ${activeTab === 'test-coupons' ? 'active' : ''}`}
+                onClick={() => setActiveTab('test-coupons')}
+              >
+                Test Coupons
+              </button>
             </div>
 
             <div className="tab-content">
@@ -112,6 +119,7 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
               {activeTab === 'feedback' && <FeedbackTab userLocation={userLocation} isSuperAdmin={isSuperAdmin} />}
               {activeTab === 'transfer' && <StockTransferTab />}
               {activeTab === 'deals' && <DealOfTheWeekTab />}
+              {activeTab === 'test-coupons' && <TestCouponsTab />}
             </div>
           </>
         ) : (

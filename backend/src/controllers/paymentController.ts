@@ -10,25 +10,41 @@ export const verifyCoupon = async (req: Request, res: Response) => {
   try {
     const { code } = req.body;
 
+    // First check regular coupons
     const { data: coupon, error } = await supabase
       .from('coupons')
       .select('code, amount, used, expires_at')
       .eq('code', code)
       .single();
 
-    if (error || !coupon) {
-      return res.status(404).json({ error: 'Invalid coupon code' });
+    if (!error && coupon) {
+      if (coupon.used) {
+        return res.status(400).json({ error: 'Coupon already used' });
+      }
+
+      if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+        return res.status(400).json({ error: 'Coupon expired' });
+      }
+
+      return res.json({ code: coupon.code, amount: coupon.amount, isTestCoupon: false });
     }
 
-    if (coupon.used) {
-      return res.status(400).json({ error: 'Coupon already used' });
+    // Check test coupons (100% discount, never expire)
+    const { data: testCoupon, error: testError } = await supabase
+      .from('test_coupons')
+      .select('code, discount_percent')
+      .eq('code', code)
+      .single();
+
+    if (!testError && testCoupon) {
+      return res.json({ 
+        code: testCoupon.code, 
+        amount: 999999, // Large amount to ensure 100% discount
+        isTestCoupon: true 
+      });
     }
 
-    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-      return res.status(400).json({ error: 'Coupon expired' });
-    }
-
-    res.json({ code: coupon.code, amount: coupon.amount });
+    return res.status(404).json({ error: 'Invalid coupon code' });
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to verify coupon' });
   }
@@ -39,7 +55,9 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
     const { cart, customerInfo, couponCode } = req.body;
 
     let discount = 0;
+    let isTestCoupon = false;
     if (couponCode) {
+      // Check regular coupons first
       const { data: coupon } = await supabase
         .from('coupons')
         .select('amount, used')
@@ -48,6 +66,23 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
       
       if (coupon && !coupon.used) {
         discount = coupon.amount;
+      } else {
+        // Check test coupons
+        const { data: testCoupon } = await supabase
+          .from('test_coupons')
+          .select('discount_percent')
+          .eq('code', couponCode)
+          .single();
+        
+        if (testCoupon) {
+          isTestCoupon = true;
+          // For test coupons, set discount to full subtotal for 100% off
+          const subtotal = cart.reduce((sum: number, item: any) => {
+            if (item.isFreeRegipallu) return sum;
+            return sum + (item.price * item.quantity);
+          }, 0);
+          discount = subtotal; // 100% discount
+        }
       }
     }
 
@@ -61,7 +96,7 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
       price_data: {
         currency: 'gbp',
         product_data: {
-          name: discount > 0 ? `Order Total (${discount} discount applied)` : 'Order Total',
+          name: discount > 0 ? `Order Total (${isTestCoupon ? 'TEST 100%' : discount} discount applied)` : 'Order Total',
         },
         unit_amount: Math.round(finalTotal * 100),
       },
@@ -91,6 +126,7 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
         location: customerInfo.location || 'Leeds', // Customer's location
         cartData: JSON.stringify(cartData),
         couponCode: couponCode || '',
+        isTestCoupon: isTestCoupon.toString(),
       },
     });
 
@@ -98,6 +134,72 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Stripe session error:', error);
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const getTestCoupons = async (req: Request, res: Response) => {
+  try {
+    const { data: coupons, error } = await supabase
+      .from('test_coupons')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(coupons || []);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch test coupons' });
+  }
+};
+
+export const createTestCoupon = async (req: Request, res: Response) => {
+  try {
+    const { code } = req.body;
+
+    if (!code || !code.trim()) {
+      return res.status(400).json({ error: 'Coupon code is required' });
+    }
+
+    // Check if code already exists
+    const { data: existing } = await supabase
+      .from('test_coupons')
+      .select('id')
+      .eq('code', code.toUpperCase())
+      .single();
+
+    if (existing) {
+      return res.status(400).json({ error: 'Coupon code already exists' });
+    }
+
+    const { data: coupon, error } = await supabase
+      .from('test_coupons')
+      .insert({
+        code: code.toUpperCase(),
+        discount_percent: 100,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(coupon);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to create test coupon' });
+  }
+};
+
+export const deleteTestCoupon = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from('test_coupons')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to delete test coupon' });
   }
 };
 
@@ -136,6 +238,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
       const location = session.metadata!.location || 'Leeds';
       const cart = JSON.parse(session.metadata!.cartData);
       const couponCode = session.metadata!.couponCode;
+      const isTestCoupon = session.metadata!.isTestCoupon === 'true';
 
       const totalAmount = session.amount_total! / 100;
 
@@ -175,8 +278,8 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
       console.log('Order items created');
 
-      // Mark coupon as used
-      if (couponCode) {
+      // Mark coupon as used (only for regular coupons, not test coupons)
+      if (couponCode && !isTestCoupon) {
         await supabase
           .from('coupons')
           .update({ used: true })
