@@ -73,7 +73,7 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
       })
       
       if (response.ok) {
-        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory_leeds: '', inventory_derby: '', inventory_sheffield: '', has_limit: false, max_per_order: '' })
+        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory_leeds: '', inventory_derby: '', inventory_sheffield: '', has_limit: false, max_per_order: '', origin: '' })
         setShowCreateForm(false)
         fetchProducts()
       }
@@ -119,13 +119,12 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
           inventory_sheffield: parseInt(formData.inventory_sheffield),
           has_limit: formData.has_limit,
           max_per_order: formData.max_per_order ? parseInt(formData.max_per_order) : null,
-          origin: formData.origin || null,
           origin: formData.origin || null
         })
       })
       
       if (response.ok) {
-        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory_leeds: '', inventory_derby: '', inventory_sheffield: '', has_limit: false, max_per_order: '' })
+        setFormData({ name: '', description: '', price: '', weight: '', category_id: '', image_url: '', inventory_leeds: '', inventory_derby: '', inventory_sheffield: '', has_limit: false, max_per_order: '', origin: '' })
         setShowCreateForm(false)
         setEditingItem(null)
         fetchProducts()
@@ -247,12 +246,6 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
           <input
             type="text"
             placeholder="Origin (e.g., India, Pakistan)"
-            value={formData.origin}
-            onChange={(e) => setFormData({...formData, origin: e.target.value})}
-          />
-          <input
-            type="text"
-            placeholder="Origin (optional)"
             value={formData.origin}
             onChange={(e) => setFormData({...formData, origin: e.target.value})}
           />
