@@ -119,6 +119,7 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
           inventory_sheffield: parseInt(formData.inventory_sheffield),
           has_limit: formData.has_limit,
           max_per_order: formData.max_per_order ? parseInt(formData.max_per_order) : null,
+          origin: formData.origin || null,
           origin: formData.origin || null
         })
       })
@@ -242,6 +243,12 @@ export default function ProductsTab({ userLocation, isSuperAdmin }: ProductsTabP
             placeholder="Image URL (optional)"
             value={formData.image_url}
             onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+          />
+          <input
+            type="text"
+            placeholder="Origin (e.g., India, Pakistan)"
+            value={formData.origin}
+            onChange={(e) => setFormData({...formData, origin: e.target.value})}
           />
           <input
             type="text"

@@ -191,7 +191,7 @@ function App() {
           
           <div className="delivery-notice">
             <div className="delivery-notice-content">
-              📦 We deliver all orders on Wednesdays and Saturdays depending on when you order. Thanks for choosing Flavours From Home! 🙏
+              📅 Delivery Schedule: We deliver every Wednesday and Sunday between 8:00 AM and 8:00 PM | ⏰ Order Cut-Off: Place your order by 9:00 PM the day before delivery to receive it on your selected delivery day | Thank you for choosing Flavours From Home! 🙏
             </div>
           </div>
         </div>
