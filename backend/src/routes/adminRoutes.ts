@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { loginAdmin, getAllAdmins, createAdmin, updateAdminStatus, deleteAdmin, getDrivers, createDriver } from '../controllers/adminController';
+import { loginAdmin, getAllAdmins, createAdmin, updateAdminStatus, deleteAdmin, getDrivers, createDriver, createPartner, getPartners, getPartnerOrders, validateDiscountCode } from '../controllers/adminController';
 import { requireSuperAdmin, requireAdmin } from '../middleware/superAdminMiddleware';
 
 const router = Router();
@@ -183,5 +183,11 @@ router.put('/users/:id/status', requireSuperAdmin, updateAdminStatus);
  *         description: Admin user deleted
  */
 router.delete('/users/:id', requireSuperAdmin, deleteAdmin);
+
+// Partner routes
+router.get('/partners', getPartners);
+router.post('/partners', requireSuperAdmin, createPartner);
+router.get('/partner-orders', getPartnerOrders);
+router.post('/validate-discount', validateDiscountCode);
 
 export default router;

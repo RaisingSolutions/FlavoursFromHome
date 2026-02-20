@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import LoginForm from './components/LoginForm'
 import Dashboard from './components/Dashboard'
+import PartnerDashboard from './components/PartnerDashboard'
 import { ToastProvider } from './context/ToastContext'
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
   const [adminId, setAdminId] = useState('')
   const [userRole, setUserRole] = useState('')
   const [userLocation, setUserLocation] = useState<string | null>(null)
+  const [partnerData, setPartnerData] = useState<any>(null)
 
   useEffect(() => {
     const savedLoginState = localStorage.getItem('adminLoginState')
@@ -22,13 +24,15 @@ function App() {
           isSuperAdmin: parsed.isSuperAdmin,
           adminId: parsed.adminId,
           role: parsed.role || 'admin',
-          location: parsed.location || null
+          location: parsed.location || null,
+          partnerData: parsed.partnerData || null
         }
         setIsLoggedIn(loginData.isLoggedIn)
         setIsSuperAdmin(loginData.isSuperAdmin)
         setAdminId(loginData.adminId)
         setUserRole(loginData.role)
         setUserLocation(loginData.location)
+        setPartnerData(loginData.partnerData)
       }
     }
   }, [])
@@ -39,6 +43,11 @@ function App() {
     setAdminId(data.id.toString())
     setUserRole(data.role || 'admin')
     setUserLocation(data.location || null)
+    setPartnerData(data.role === 'partner' ? {
+      username: data.username,
+      discount_code: data.discount_code,
+      discount_percentage: data.discount_percentage
+    } : null)
     
     localStorage.setItem('adminLoginState', JSON.stringify({
       isLoggedIn: true,
@@ -46,7 +55,12 @@ function App() {
       isSuperAdmin: data.is_super_admin,
       adminId: data.id.toString(),
       role: data.role || 'admin',
-      location: data.location || null
+      location: data.location || null,
+      partnerData: data.role === 'partner' ? {
+        username: data.username,
+        discount_code: data.discount_code,
+        discount_percentage: data.discount_percentage
+      } : null
     }))
   }
 
@@ -56,10 +70,22 @@ function App() {
     setAdminId('')
     setUserRole('')
     setUserLocation(null)
+    setPartnerData(null)
     localStorage.removeItem('adminLoginState')
   }
 
   if (isLoggedIn) {
+    if (userRole === 'partner') {
+      return (
+        <ToastProvider>
+          <PartnerDashboard 
+            partnerId={adminId}
+            onSignOut={handleSignOut}
+          />
+        </ToastProvider>
+      )
+    }
+    
     return (
       <ToastProvider>
         <Dashboard 

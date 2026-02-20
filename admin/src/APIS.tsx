@@ -272,3 +272,28 @@ export const submitStockTransfer = async (fromLocation: string, toLocation: stri
   })
   return response.ok
 }
+
+// Partner APIs
+export const fetchPartners = async () => {
+  const response = await fetch(`${BASE_URL}/admin/partners`)
+  return response.json()
+}
+
+export const createPartner = async (adminId: string, username: string, password: string, discount_code: string, discount_percentage: number) => {
+  const response = await fetch(`${BASE_URL}/admin/partners`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'admin-id': adminId
+    },
+    body: JSON.stringify({ username, password, discount_code, discount_percentage }),
+  })
+  return response.ok
+}
+
+export const fetchPartnerOrders = async (partnerId: string) => {
+  const response = await fetch(`${BASE_URL}/admin/partner-orders`, {
+    headers: { 'admin-id': partnerId }
+  })
+  return response.json()
+}

@@ -18,6 +18,8 @@ export const getAllOrders = async (req: Request, res: Response) => {
         phone_number,
         address,
         total_amount,
+        discount_code,
+        discount_amount,
         payment_method,
         order_date,
         status,
@@ -70,7 +72,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { first_name, email, phone_number, address, payment_method, total_amount, items, location } = req.body;
+    const { first_name, email, phone_number, address, payment_method, total_amount, items, location, discount_code, discount_amount } = req.body;
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -82,7 +84,9 @@ export const createOrder = async (req: Request, res: Response) => {
         payment_method,
         total_amount,
         location, // Leeds, Derby, or Sheffield
-        status: 'pending'
+        status: 'pending',
+        discount_code: discount_code || null,
+        discount_amount: discount_amount || 0
       })
       .select()
       .single();
@@ -128,8 +132,9 @@ export const createOrder = async (req: Request, res: Response) => {
 
     const orderType = address === 'Collection' ? '📦 Collection' : '🚚 Delivery';
     const addressLine = address === 'Collection' ? '' : `\nAddress: ${address}`;
+    const discountLine = discount_amount > 0 ? `\nDiscount: -£${discount_amount}` : '';
 
-    const message = `✅ Order #${order.id} Confirmed!\n\nCustomer: ${first_name}\nEmail: ${email}\nPhone: ${phone_number}\nType: ${orderType}${addressLine}\n\nItems:\n${itemsWithNames}\n\nTotal: £${total_amount}\nPayment: ${payment_method}\n\nThank you for your order!`;
+    const message = `✅ Order #${order.id} Confirmed!\n\nCustomer: ${first_name}\nEmail: ${email}\nPhone: ${phone_number}\nType: ${orderType}${addressLine}\n\nItems:\n${itemsWithNames}${discountLine}\n\nTotal: £${total_amount}\nPayment: ${payment_method}\n\nThank you for your order!`;
     
     sendWhatsAppMessage(phone_number, message);
     

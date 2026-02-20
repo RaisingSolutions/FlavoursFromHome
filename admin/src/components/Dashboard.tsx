@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import AdminManagement from './AdminManagement'
+import PartnerManagement from './PartnerManagement'
 import OrdersTab from './OrdersTab'
 import CategoriesTab from './CategoriesTab'
 import ProductsTab from './ProductsTab'
@@ -22,6 +23,7 @@ interface DashboardProps {
 
 export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocation, onSignOut }: DashboardProps) {
   const [showAdminManagement, setShowAdminManagement] = useState(false)
+  const [showPartnerCreation, setShowPartnerCreation] = useState(false)
   const [activeTab, setActiveTab] = useState(userRole === 'driver' ? 'delivery' : 'orders')
 
   return (
@@ -34,12 +36,21 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
         </div>
         <div className="navbar-actions">
           {isSuperAdmin && (
-            <button 
-              className="admin-btn" 
-              onClick={() => setShowAdminManagement(!showAdminManagement)}
-            >
-              Admin Users
-            </button>
+            <>
+              <button 
+                className="admin-btn" 
+                onClick={() => setShowAdminManagement(!showAdminManagement)}
+              >
+                Admin Users
+              </button>
+              <button 
+                className="admin-btn" 
+                onClick={() => setShowPartnerCreation(!showPartnerCreation)}
+                style={{ marginLeft: '10px' }}
+              >
+                Create Partner User
+              </button>
+            </>
           )}
           <button className="signout-btn" onClick={onSignOut}>Sign Out</button>
         </div>
@@ -49,6 +60,13 @@ export default function Dashboard({ isSuperAdmin, adminId, userRole, userLocatio
         <AdminManagement 
           adminId={adminId} 
           onClose={() => setShowAdminManagement(false)} 
+        />
+      )}
+      
+      {showPartnerCreation && (
+        <PartnerManagement 
+          adminId={adminId} 
+          onClose={() => setShowPartnerCreation(false)} 
         />
       )}
       

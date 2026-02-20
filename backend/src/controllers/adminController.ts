@@ -27,7 +27,9 @@ export const loginAdmin = async (req: Request, res: Response) => {
       username: data.username,
       is_super_admin: data.is_super_admin,
       role: data.role || 'admin',
-      location: data.location, // Leeds, Derby, Sheffield, or null for super admin
+      location: data.location,
+      discount_code: data.discount_code || null,
+      discount_percentage: data.discount_percentage || null,
       message: 'Login successful'
     });
   } catch (error) {
@@ -141,13 +143,106 @@ export const getDrivers = async (req: Request, res: Response) => {
   }
 };
 
+export const createPartner = async (req: Request, res: Response) => {
+  try {
+    const { username, password, discount_code, discount_percentage } = req.body;
+
+    const saltRounds = 10;
+    const password_hash = await bcrypt.hash(password, saltRounds);
+
+    const { data, error } = await supabase
+      .from('admin_users')
+      .insert({
+        username,
+        password_hash,
+        is_super_admin: false,
+        role: 'partner',
+        discount_code,
+        discount_percentage
+      })
+      .select('id, username, discount_code, discount_percentage, created_at')
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(data);
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to create partner' });
+  }
+};
+
+export const getPartners = async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('id, username, discount_code, discount_percentage, is_active, created_at')
+      .eq('role', 'partner')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch partners' });
+  }
+};
+
+export const getPartnerOrders = async (req: Request, res: Response) => {
+  try {
+    const partnerId = req.headers['admin-id'];
+    
+    // Get partner's discount code
+    const { data: partner, error: partnerError } = await supabase
+      .from('admin_users')
+      .select('discount_code')
+      .eq('id', partnerId)
+      .eq('role', 'partner')
+      .single();
+
+    if (partnerError || !partner) {
+      return res.status(404).json({ error: 'Partner not found' });
+    }
+
+    // Get orders using this partner's discount code
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        id, 
+        total_amount, 
+        discount_amount, 
+        created_at,
+        order_items (
+          quantity,
+          products (
+            name
+          )
+        )
+      `)
+      .eq('discount_code', partner.discount_code)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Format the response to match frontend expectations
+    const formattedOrders = data.map(order => ({
+      ...order,
+      items: order.order_items.map((item: any) => ({
+        product_name: item.products.name,
+        quantity: item.quantity
+      }))
+    }));
+
+    res.json(formattedOrders);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch partner orders' });
+  }
+};
+
 export const createDriver = async (req: Request, res: Response) => {
   try {
     const { username, password, location } = req.body;
     const admin = (req as any).admin;
 
-    // Location admins can only create drivers for their location
-    // Super admins can create drivers for any location
     const driverLocation = admin.is_super_admin ? location : admin.location;
 
     if (!driverLocation) {
@@ -174,5 +269,30 @@ export const createDriver = async (req: Request, res: Response) => {
     res.status(201).json(data);
   } catch (error) {
     res.status(400).json({ error: 'Failed to create driver' });
+  }
+};
+
+export const validateDiscountCode = async (req: Request, res: Response) => {
+  try {
+    const { discount_code } = req.body;
+
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('discount_code, discount_percentage')
+      .eq('discount_code', discount_code)
+      .eq('role', 'partner')
+      .eq('is_active', true)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({ error: 'Invalid discount code' });
+    }
+
+    res.json({
+      valid: true,
+      discount_percentage: data.discount_percentage
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to validate discount code' });
   }
 };
