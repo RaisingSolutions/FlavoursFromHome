@@ -6,6 +6,7 @@ import CartPage from './components/CartPage'
 import CheckoutPage from './components/CheckoutPage'
 import SuccessPage from './components/SuccessPage'
 import FeedbackPage from './components/FeedbackPage'
+import OurStoryPage from './components/OurStoryPage'
 import Toast from './components/Toast'
 
 interface CartItem {
@@ -46,10 +47,11 @@ function App() {
     return []
   })
   const [cartCount, setCartCount] = useState(0)
-  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout' | 'success' | 'feedback'>(() => {
+  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout' | 'success' | 'feedback' | 'story'>(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('order')) return 'feedback'
     if (params.get('success') === 'true') return 'success'
+    if (params.get('page') === 'story') return 'story'
     return 'home'
   })
 
@@ -59,8 +61,19 @@ function App() {
       setCurrentPage('feedback')
     } else if (params.get('success') === 'true') {
       setCurrentPage('success')
+    } else if (params.get('page') === 'story') {
+      setCurrentPage('story')
     }
   }, [])
+
+  const navigateToPage = (page: 'home' | 'cart' | 'story') => {
+    setCurrentPage(page)
+    if (page === 'story') {
+      window.history.pushState({}, '', '?page=story')
+    } else if (page === 'home') {
+      window.history.pushState({}, '', '/')
+    }
+  }
 
   useEffect(() => {
     fetchCategories()
@@ -178,11 +191,14 @@ function App() {
       <div className="app">
         <div className="navbar-container">
           <nav className="navbar">
-            <div className="navbar-brand" onClick={() => setCurrentPage('home')} style={{ cursor: 'pointer' }}>
+            <div className="navbar-brand" onClick={() => navigateToPage('home')} style={{ cursor: 'pointer' }}>
               <img src="https://res.cloudinary.com/dulm4r5mo/image/upload/v1763129727/FFH_Logo_f47yft.png" alt="FFH Logo" className="navbar-logo" />
               Flavours From Home
             </div>
             <div className="navbar-actions">
+              <button className="cart-btn" onClick={() => navigateToPage('story')} style={{ marginRight: '10px' }}>
+                Our Story
+              </button>
               <button className="cart-btn" onClick={() => setCurrentPage('cart')}>
                 🛒 Cart ({cartCount})
               </button>
@@ -218,10 +234,12 @@ function App() {
               cart={cart}
               cartCount={cartCount}
               onUpdateQuantity={updateQuantity}
-              onContinueShopping={() => setCurrentPage('home')}
+              onContinueShopping={() => navigateToPage('home')}
               onCheckout={() => setCurrentPage('checkout')}
               onShowToast={(message, type) => setToast({ message, type })}
             />
+          ) : currentPage === 'story' ? (
+            <OurStoryPage />
           ) : (
             <HomePage 
               categories={categories}
