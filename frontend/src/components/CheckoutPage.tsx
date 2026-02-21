@@ -29,6 +29,7 @@ export default function CheckoutPage({
   const [email, setEmail] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [address, setAddress] = useState('')
+  const [streetAddress, setStreetAddress] = useState('')
   const [postcode, setPostcode] = useState('')
   const [addresses, setAddresses] = useState<string[]>([])
   const [searchingAddress, setSearchingAddress] = useState(false)
@@ -89,26 +90,33 @@ export default function CheckoutPage({
 
     setSearchingAddress(true)
     try {
-      // Using getAddress.io API
-      const apiKey = 'jXKGUFTLcE2EMUJbkLtrhA49594'
-      const response = await fetch(`https://api.getaddress.io/find/${postcode.replace(/\s/g, '')}?api-key=${apiKey}&expand=true`)
+      const response = await fetch(`https://api.postcodes.io/postcodes/${postcode.replace(/\s/g, '')}`)
       const data = await response.json()
-      console.log('Address API response:', data)
       
-      if (response.ok && data.addresses && data.addresses.length > 0) {
-        const addressList = data.addresses.map((addr: any) => 
-          `${addr.line_1}${addr.line_2 ? ', ' + addr.line_2 : ''}, ${addr.town_or_city}, ${postcode.toUpperCase()}`
-        )
-        console.log('Address list:', addressList)
-        setAddresses(addressList)
-        setAddress(addressList[0])
-        onShowToast(`Found ${addressList.length} addresses`, 'success')
+      if (response.ok && data.status === 200) {
+        const result = data.result
+        const city = result.admin_district || result.parliamentary_constituency || ''
+        
+        // Validate city matches location
+        const cityMatch = 
+          (location === 'Leeds' && city.toLowerCase().includes('leeds')) ||
+          (location === 'Derby' && city.toLowerCase().includes('derby')) ||
+          (location === 'Sheffield' && city.toLowerCase().includes('sheffield'))
+        
+        if (!cityMatch) {
+          onShowToast(`This postcode is not in ${location}. Please select ${location} as your location or use a ${location} postcode.`, 'error')
+          return
+        }
+        
+        setAddresses(['verified'])
+        setAddress(`${location}, ${postcode.toUpperCase()}`)
+        onShowToast('Postcode verified! Please enter your street address.', 'success')
       } else {
-        onShowToast('No addresses found for this postcode', 'error')
+        onShowToast('Invalid postcode', 'error')
       }
     } catch (err) {
       console.error('Address search error:', err)
-      onShowToast('Failed to search address', 'error')
+      onShowToast('Failed to verify postcode', 'error')
     } finally {
       setSearchingAddress(false)
     }
@@ -129,7 +137,7 @@ export default function CheckoutPage({
         firstName,
         email,
         phoneNumber,
-        address: orderType === 'delivery' ? address : 'Collection',
+        address: orderType === 'delivery' ? `${streetAddress}, ${address}` : 'Collection',
         orderType,
         location
       }
@@ -243,26 +251,23 @@ export default function CheckoutPage({
                       onClick={handleSearchAddress}
                       disabled={searchingAddress}
                     >
-                      {searchingAddress ? 'Searching...' : 'Search'}
+                      {searchingAddress ? 'Verifying...' : 'Verify'}
                     </button>
                   </div>
-                  <small style={{ color: '#666', fontSize: '0.85rem' }}>We deliver to Leeds (LS), Derby (DE), and Sheffield (S) only</small>
                 </div>
 
                 {addresses.length > 0 && (
                   <div className="form-group">
-                    <label htmlFor="address">Select Your Address *</label>
-                    <select
-                      id="address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
+                    <label htmlFor="streetAddress">Street Address *</label>
+                    <input
+                      type="text"
+                      id="streetAddress"
+                      value={streetAddress}
+                      onChange={(e) => setStreetAddress(e.target.value)}
+                      placeholder="e.g., 85 High Ash Avenue"
                       required
-                      style={{ width: '100%', padding: '12px' }}
-                    >
-                      {addresses.map((addr, idx) => (
-                        <option key={idx} value={addr}>{addr}</option>
-                      ))}
-                    </select>
+                    />
+                    <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '5px', display: 'block' }}>Full address: {streetAddress ? `${streetAddress}, ${address}` : address}</small>
                   </div>
                 )}
               </>
