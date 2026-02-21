@@ -18,7 +18,6 @@ interface PartnerManagementProps {
 
 export default function PartnerManagement({ adminId, onClose }: PartnerManagementProps) {
   const [partners, setPartners] = useState<Partner[]>([])
-  const [showCreateForm, setShowCreateForm] = useState(false)
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -50,7 +49,6 @@ export default function PartnerManagement({ adminId, onClose }: PartnerManagemen
       if (success) {
         showToast('Partner created successfully', 'success')
         setFormData({ username: '', password: '', discount_code: '', discount_percentage: '' })
-        setShowCreateForm(false)
         loadPartners()
       } else {
         showToast('Failed to create partner', 'error')

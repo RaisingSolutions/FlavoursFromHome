@@ -12,7 +12,6 @@ function App() {
   const [adminId, setAdminId] = useState('')
   const [userRole, setUserRole] = useState('')
   const [userLocation, setUserLocation] = useState<string | null>(null)
-  const [partnerData, setPartnerData] = useState<any>(null)
 
   useEffect(() => {
     const savedLoginState = localStorage.getItem('adminLoginState')
@@ -32,7 +31,6 @@ function App() {
         setAdminId(loginData.adminId)
         setUserRole(loginData.role)
         setUserLocation(loginData.location)
-        setPartnerData(loginData.partnerData)
       }
     }
   }, [])
@@ -43,11 +41,6 @@ function App() {
     setAdminId(data.id.toString())
     setUserRole(data.role || 'admin')
     setUserLocation(data.location || null)
-    setPartnerData(data.role === 'partner' ? {
-      username: data.username,
-      discount_code: data.discount_code,
-      discount_percentage: data.discount_percentage
-    } : null)
     
     localStorage.setItem('adminLoginState', JSON.stringify({
       isLoggedIn: true,
@@ -70,7 +63,6 @@ function App() {
     setAdminId('')
     setUserRole('')
     setUserLocation(null)
-    setPartnerData(null)
     localStorage.removeItem('adminLoginState')
   }
 

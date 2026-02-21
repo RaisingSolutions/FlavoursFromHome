@@ -5,6 +5,7 @@ import { useToastContext } from '../context/ToastContext'
 interface PartnerOrder {
   id: number
   total_amount: number
+  discount_amount?: number
   created_at: string
   items: Array<{
     product_name: string
