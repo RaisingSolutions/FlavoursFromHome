@@ -39,7 +39,6 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
 
   const subtotal = (adultTickets * (event?.adult_price || 0)) + (childTickets * (event?.child_price || 0))
   const discount = appliedCoupon ? subtotal * (appliedCoupon.percentage / 100) : 0
-  const totalAmount = subtotal - discount
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return
@@ -371,6 +370,10 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
                   <span>-£{discount.toFixed(2)}</span>
                 </div>
               )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 'bold', borderTop: '2px solid #e0e0e0', paddingTop: '10px' }}>
+                <span>Total:</span>
+                <span>£{(subtotal - discount).toFixed(2)}</span>
+              </div>
             </div>
 
             <div style={{ marginTop: '20px' }}>
