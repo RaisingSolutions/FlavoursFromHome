@@ -34,8 +34,9 @@ export const getEventById = async (req: Request, res: Response) => {
 
     const adultRemaining = event.adult_capacity - event.adult_sold;
     const childRemaining = event.child_capacity - event.child_sold;
+    const parentRemaining = event.parent_capacity - event.parent_sold;
 
-    res.json({ ...event, adultRemaining, childRemaining });
+    res.json({ ...event, adultRemaining, childRemaining, parentRemaining });
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to fetch event' });
   }
@@ -43,7 +44,7 @@ export const getEventById = async (req: Request, res: Response) => {
 
 export const createEventBooking = async (req: Request, res: Response) => {
   try {
-    const { eventId, customerInfo, adultTickets, childTickets } = req.body;
+    const { eventId, customerInfo, adultTickets, childTickets, parentTickets, couponCode } = req.body;
 
     const { data: event, error: eventError } = await supabase
       .from('events')
@@ -57,12 +58,34 @@ export const createEventBooking = async (req: Request, res: Response) => {
 
     const adultRemaining = event.adult_capacity - event.adult_sold;
     const childRemaining = event.child_capacity - event.child_sold;
+    const parentRemaining = event.parent_capacity - event.parent_sold;
 
-    if (adultTickets > adultRemaining || childTickets > childRemaining) {
+    if (adultTickets > adultRemaining || childTickets > childRemaining || parentTickets > parentRemaining) {
       return res.status(400).json({ error: 'Not enough tickets available' });
     }
 
-    const totalAmount = (adultTickets * event.adult_price) + (childTickets * event.child_price);
+    let totalAmount = (adultTickets * event.adult_price) + (childTickets * event.child_price);
+    let discountPercentage = 0;
+    let appliedCouponCode = '';
+
+    // Check for event coupon
+    if (couponCode) {
+      const { data: coupon, error: couponError } = await supabase
+        .from('event_coupons')
+        .select('*')
+        .eq('code', couponCode.toUpperCase())
+        .eq('is_active', true)
+        .single();
+
+      if (!couponError && coupon) {
+        if (coupon.max_uses && coupon.used_count >= coupon.max_uses) {
+          return res.status(400).json({ error: 'Coupon usage limit reached' });
+        }
+        discountPercentage = coupon.discount_percentage;
+        appliedCouponCode = coupon.code;
+        totalAmount = totalAmount * (1 - discountPercentage / 100);
+      }
+    }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -71,7 +94,7 @@ export const createEventBooking = async (req: Request, res: Response) => {
           currency: 'gbp',
           product_data: {
             name: `${event.name} - Tickets`,
-            description: `${adultTickets} Adult, ${childTickets} Child`,
+            description: `${adultTickets} Adult, ${childTickets} Child, ${parentTickets} Visiting Parents${appliedCouponCode ? ` (${discountPercentage}% off)` : ''}`,
           },
           unit_amount: Math.round(totalAmount * 100),
         },
@@ -88,7 +111,10 @@ export const createEventBooking = async (req: Request, res: Response) => {
         phoneNumber: customerInfo.phoneNumber,
         adultTickets: adultTickets.toString(),
         childTickets: childTickets.toString(),
+        parentTickets: parentTickets.toString(),
         marketingConsent: customerInfo.marketingConsent.toString(),
+        couponCode: appliedCouponCode,
+        discountPercentage: discountPercentage.toString(),
       },
     });
 
@@ -127,6 +153,31 @@ export const validateEventDiscount = async (req: Request, res: Response) => {
   }
 };
 
+export const validateEventCoupon = async (req: Request, res: Response) => {
+  try {
+    const { code } = req.body;
+
+    const { data: coupon, error } = await supabase
+      .from('event_coupons')
+      .select('*')
+      .eq('code', code.toUpperCase())
+      .eq('is_active', true)
+      .single();
+
+    if (error || !coupon) {
+      return res.status(404).json({ error: 'Invalid coupon code' });
+    }
+
+    if (coupon.max_uses && coupon.used_count >= coupon.max_uses) {
+      return res.status(400).json({ error: 'Coupon usage limit reached' });
+    }
+
+    res.json({ code: coupon.code, percentage: coupon.discount_percentage });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to validate coupon' });
+  }
+};
+
 export const generateDiscountCode = (sponsorName: string): string => {
   const random = Math.random().toString(36).substring(2, 7).toUpperCase();
   return `FFH_${sponsorName.toUpperCase()}_${random}`;
@@ -148,10 +199,12 @@ export const handleEventWebhook = async (session: any) => {
     const phoneNumber = session.metadata.phoneNumber;
     const adultTickets = parseInt(session.metadata.adultTickets);
     const childTickets = parseInt(session.metadata.childTickets);
+    const parentTickets = parseInt(session.metadata.parentTickets || '0');
     const marketingConsent = session.metadata.marketingConsent === 'true';
+    const couponCode = session.metadata.couponCode || '';
     const totalAmount = session.amount_total! / 100;
 
-    console.log('Creating event booking:', { eventId, email, adultTickets, childTickets });
+    console.log('Creating event booking:', { eventId, email, adultTickets, childTickets, parentTickets });
 
     const { data: booking, error: bookingError } = await supabase
       .from('event_bookings')
@@ -162,6 +215,7 @@ export const handleEventWebhook = async (session: any) => {
         phone_number: phoneNumber,
         adult_tickets: adultTickets,
         child_tickets: childTickets,
+        parent_tickets: parentTickets,
         total_amount: totalAmount,
         payment_status: 'paid',
         stripe_session_id: session.id,
@@ -177,10 +231,24 @@ export const handleEventWebhook = async (session: any) => {
 
     console.log('Booking created:', booking.id);
 
+    // Increment coupon usage if used
+    if (couponCode) {
+      const { data: currentCoupon } = await supabase
+        .from('event_coupons')
+        .select('used_count')
+        .eq('code', couponCode)
+        .single();
+      
+      await supabase
+        .from('event_coupons')
+        .update({ used_count: (currentCoupon?.used_count || 0) + 1 })
+        .eq('code', couponCode);
+    }
+
     // Get current ticket counts and increment
     const { data: currentEvent } = await supabase
       .from('events')
-      .select('adult_sold, child_sold, sponsor_name')
+      .select('adult_sold, child_sold, parent_sold, sponsor_name')
       .eq('id', eventId)
       .single();
 
@@ -191,6 +259,7 @@ export const handleEventWebhook = async (session: any) => {
       .update({
         adult_sold: (currentEvent?.adult_sold || 0) + adultTickets,
         child_sold: (currentEvent?.child_sold || 0) + childTickets,
+        parent_sold: (currentEvent?.parent_sold || 0) + parentTickets,
       })
       .eq('id', eventId);
 

@@ -7,5 +7,6 @@ router.get('/', eventController.getEvents);
 router.get('/:id', eventController.getEventById);
 router.post('/:id/book', eventController.createEventBooking);
 router.post('/discount/validate', eventController.validateEventDiscount);
+router.post('/coupon/validate', eventController.validateEventCoupon);
 
 export default router;

@@ -14,6 +14,10 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
   const [phoneNumber, setPhoneNumber] = useState('')
   const [adultTickets, setAdultTickets] = useState(0)
   const [childTickets, setChildTickets] = useState(0)
+  const [parentTickets, setParentTickets] = useState(0)
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percentage: number } | null>(null)
+  const [verifyingCoupon, setVerifyingCoupon] = useState(false)
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -33,12 +37,40 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
     }
   }
 
-  const totalAmount = (adultTickets * (event?.adult_price || 0)) + (childTickets * (event?.child_price || 0))
+  const subtotal = (adultTickets * (event?.adult_price || 0)) + (childTickets * (event?.child_price || 0))
+  const discount = appliedCoupon ? subtotal * (appliedCoupon.percentage / 100) : 0
+  const totalAmount = subtotal - discount
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return
+    
+    setVerifyingCoupon(true)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/events/coupon/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: couponCode })
+      })
+
+      const data = await response.json()
+      
+      if (response.ok) {
+        setAppliedCoupon({ code: couponCode, percentage: data.percentage })
+        onShowToast(`Coupon applied! ${data.percentage}% off`, 'success')
+      } else {
+        onShowToast(data.error || 'Invalid coupon code', 'error')
+      }
+    } catch {
+      onShowToast('Failed to verify coupon', 'error')
+    } finally {
+      setVerifyingCoupon(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (adultTickets === 0 && childTickets === 0) {
+    if (adultTickets === 0 && childTickets === 0 && parentTickets === 0) {
       onShowToast('Please select at least one ticket', 'error')
       return
     }
@@ -58,7 +90,9 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
           eventId,
           customerInfo: { firstName, email, phoneNumber, marketingConsent },
           adultTickets,
-          childTickets
+          childTickets,
+          parentTickets,
+          couponCode: appliedCoupon?.code
         })
       })
 
@@ -240,6 +274,83 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
                   </button>
                 </div>
               </div>
+
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '15px',
+                background: '#e8f5e9',
+                borderRadius: '8px',
+                border: '2px dashed #4caf50'
+              }}>
+                <div>
+                  <div style={{ fontWeight: 'bold', color: '#2e7d32' }}>Visiting Parents</div>
+                  <div style={{ fontSize: '14px', color: '#666' }}>
+                    FREE ({event.parentRemaining} available)
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setParentTickets(Math.max(0, parentTickets - 1))}
+                    style={{ padding: '5px 15px', fontSize: '18px' }}
+                  >
+                    -
+                  </button>
+                  <span style={{ fontSize: '18px', fontWeight: 'bold', minWidth: '30px', textAlign: 'center' }}>
+                    {parentTickets}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setParentTickets(Math.min(event.parentRemaining, parentTickets + 1))}
+                    style={{ padding: '5px 15px', fontSize: '18px' }}
+                    disabled={parentTickets >= event.parentRemaining}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '20px' }}>
+              <label style={{ fontWeight: 'bold', marginBottom: '10px', display: 'block' }}>Coupon Code (Optional)</label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder="Enter coupon code"
+                  disabled={!!appliedCoupon}
+                  style={{ flex: 1 }}
+                />
+                {appliedCoupon ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAppliedCoupon(null)
+                      setCouponCode('')
+                    }}
+                    style={{ padding: '10px 20px' }}
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={verifyingCoupon || !couponCode.trim()}
+                    style={{ padding: '10px 20px' }}
+                  >
+                    {verifyingCoupon ? 'Verifying...' : 'Apply'}
+                  </button>
+                )}
+              </div>
+              {appliedCoupon && (
+                <div style={{ marginTop: '10px', padding: '10px', background: '#d4edda', borderRadius: '4px', color: '#155724' }}>
+                  ✓ Coupon "{appliedCoupon.code}" applied - {appliedCoupon.percentage}% off
+                </div>
+              )}
             </div>
 
             <div style={{
@@ -248,10 +359,18 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
               background: 'white',
               borderRadius: '8px'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 'bold' }}>
-                <span>Total:</span>
-                <span>£{totalAmount.toFixed(2)}</span>
-              </div>
+              {subtotal > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', marginBottom: '10px' }}>
+                  <span>Subtotal:</span>
+                  <span>£{subtotal.toFixed(2)}</span>
+                </div>
+              )}
+              {discount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', marginBottom: '10px', color: '#28a745' }}>
+                  <span>Discount ({appliedCoupon?.percentage}%):</span>
+                  <span>-£{discount.toFixed(2)}</span>
+                </div>
+              )}
             </div>
 
             <div style={{ marginTop: '20px' }}>
