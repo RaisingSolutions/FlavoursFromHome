@@ -389,7 +389,7 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
 
             <button
               type="submit"
-              disabled={isSubmitting || totalAmount === 0}
+              disabled={isSubmitting}
               style={{
                 width: '100%',
                 padding: '15px',
@@ -401,7 +401,7 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
                 fontSize: '18px',
                 fontWeight: 'bold',
                 cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                opacity: isSubmitting || totalAmount === 0 ? 0.6 : 1
+                opacity: isSubmitting ? 0.6 : 1
               }}
             >
               {isSubmitting ? 'Processing...' : 'Proceed to Payment'}

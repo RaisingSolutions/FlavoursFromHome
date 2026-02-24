@@ -178,6 +178,100 @@ export const validateEventCoupon = async (req: Request, res: Response) => {
   }
 };
 
+export const createFreeEventBooking = async (req: Request, res: Response) => {
+  try {
+    const { eventId, customerInfo, adultTickets, childTickets, parentTickets, couponCode } = req.body;
+
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', eventId)
+      .single();
+
+    if (eventError || !event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    const { data: booking, error: bookingError } = await supabase
+      .from('event_bookings')
+      .insert({
+        event_id: eventId,
+        user_email: customerInfo.email,
+        first_name: customerInfo.firstName,
+        phone_number: customerInfo.phoneNumber,
+        adult_tickets: adultTickets,
+        child_tickets: childTickets,
+        parent_tickets: parentTickets,
+        total_amount: 0,
+        payment_status: 'paid',
+        stripe_session_id: `free_${Date.now()}`,
+        marketing_consent: customerInfo.marketingConsent,
+      })
+      .select()
+      .single();
+
+    if (bookingError) throw bookingError;
+
+    if (couponCode) {
+      const { data: currentCoupon } = await supabase
+        .from('event_coupons')
+        .select('used_count')
+        .eq('code', couponCode)
+        .single();
+      
+      await supabase
+        .from('event_coupons')
+        .update({ used_count: (currentCoupon?.used_count || 0) + 1 })
+        .eq('code', couponCode);
+    }
+
+    const { data: currentEvent } = await supabase
+      .from('events')
+      .select('adult_sold, child_sold, parent_sold, sponsor_name')
+      .eq('id', eventId)
+      .single();
+
+    await supabase
+      .from('events')
+      .update({
+        adult_sold: (currentEvent?.adult_sold || 0) + adultTickets,
+        child_sold: (currentEvent?.child_sold || 0) + childTickets,
+        parent_sold: (currentEvent?.parent_sold || 0) + parentTickets,
+      })
+      .eq('id', eventId);
+
+    const code = generateDiscountCode(currentEvent?.sponsor_name || 'EVENT');
+    const issueDate = new Date();
+    const expiryDate = new Date(issueDate);
+    expiryDate.setDate(expiryDate.getDate() + 30);
+
+    await supabase
+      .from('event_discount_codes')
+      .insert({
+        booking_id: booking.id,
+        user_email: customerInfo.email,
+        code,
+        issue_date: issueDate.toISOString(),
+        expiry_date: expiryDate.toISOString(),
+        month_number: 1,
+      });
+
+    await sendEventConfirmationEmail(customerInfo.email, {
+      firstName: customerInfo.firstName,
+      eventName: currentEvent?.sponsor_name || 'Event',
+      adultTickets,
+      childTickets,
+      totalAmount: 0,
+      discountCode: code,
+    });
+
+    res.json({ success: true, bookingId: booking.id });
+  } catch (error: any) {
+    console.error('Free booking error:', error);
+    res.status(500).json({ error: 'Failed to create booking' });
+  }
+};
+
 export const generateDiscountCode = (sponsorName: string): string => {
   const random = Math.random().toString(36).substring(2, 7).toUpperCase();
   return `FFH_${sponsorName.toUpperCase()}_${random}`;

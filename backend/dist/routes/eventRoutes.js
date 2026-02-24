@@ -42,6 +42,7 @@ const router = express_1.default.Router();
 router.get('/', eventController.getEvents);
 router.get('/:id', eventController.getEventById);
 router.post('/:id/book', eventController.createEventBooking);
+router.post('/:id/book-free', eventController.createFreeEventBooking);
 router.post('/discount/validate', eventController.validateEventDiscount);
 router.post('/coupon/validate', eventController.validateEventCoupon);
 exports.default = router;
