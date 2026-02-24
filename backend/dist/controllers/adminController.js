@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createDriver = exports.getDrivers = exports.deleteAdmin = exports.updateAdminStatus = exports.createAdmin = exports.getAllAdmins = exports.loginAdmin = void 0;
+exports.validateDiscountCode = exports.createDriver = exports.getPartnerOrders = exports.getPartners = exports.createPartner = exports.getDrivers = exports.deleteAdmin = exports.updateAdminStatus = exports.createAdmin = exports.getAllAdmins = exports.loginAdmin = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const supabase_1 = require("../utils/supabase");
 const loginAdmin = async (req, res) => {
@@ -27,6 +27,9 @@ const loginAdmin = async (req, res) => {
             username: data.username,
             is_super_admin: data.is_super_admin,
             role: data.role || 'admin',
+            location: data.location,
+            discount_code: data.discount_code || null,
+            discount_percentage: data.discount_percentage || null,
             message: 'Login successful'
         });
     }
@@ -39,7 +42,7 @@ const getAllAdmins = async (req, res) => {
     try {
         const { data, error } = await supabase_1.supabase
             .from('admin_users')
-            .select('id, username, is_active, is_super_admin, created_at')
+            .select('id, username, is_active, is_super_admin, location, role, created_at')
             .order('created_at', { ascending: false });
         if (error)
             throw error;
@@ -52,7 +55,7 @@ const getAllAdmins = async (req, res) => {
 exports.getAllAdmins = getAllAdmins;
 const createAdmin = async (req, res) => {
     try {
-        const { username, password, is_super_admin } = req.body;
+        const { username, password, is_super_admin, location } = req.body;
         const saltRounds = 10;
         const password_hash = await bcrypt_1.default.hash(password, saltRounds);
         const { data, error } = await supabase_1.supabase
@@ -60,9 +63,10 @@ const createAdmin = async (req, res) => {
             .insert({
             username,
             password_hash,
-            is_super_admin: is_super_admin || false
+            is_super_admin: is_super_admin || false,
+            location: is_super_admin ? null : location // Super admin has no location
         })
-            .select('id, username, is_active, is_super_admin, created_at')
+            .select('id, username, is_active, is_super_admin, location, created_at')
             .single();
         if (error)
             throw error;
@@ -113,11 +117,17 @@ const deleteAdmin = async (req, res) => {
 exports.deleteAdmin = deleteAdmin;
 const getDrivers = async (req, res) => {
     try {
-        const { data, error } = await supabase_1.supabase
+        const location = req.query.location;
+        let query = supabase_1.supabase
             .from('admin_users')
             .select('id, username')
             .eq('is_active', true)
             .eq('role', 'driver');
+        // Filter by location if specified
+        if (location) {
+            query = query.eq('location', location);
+        }
+        const { data, error } = await query;
         if (error)
             throw error;
         res.json(data);
@@ -127,9 +137,9 @@ const getDrivers = async (req, res) => {
     }
 };
 exports.getDrivers = getDrivers;
-const createDriver = async (req, res) => {
+const createPartner = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, password, discount_code, discount_percentage } = req.body;
         const saltRounds = 10;
         const password_hash = await bcrypt_1.default.hash(password, saltRounds);
         const { data, error } = await supabase_1.supabase
@@ -138,9 +148,104 @@ const createDriver = async (req, res) => {
             username,
             password_hash,
             is_super_admin: false,
-            role: 'driver'
+            role: 'partner',
+            discount_code,
+            discount_percentage
         })
-            .select('id, username, is_active, role, created_at')
+            .select('id, username, discount_code, discount_percentage, created_at')
+            .single();
+        if (error)
+            throw error;
+        res.status(201).json(data);
+    }
+    catch (error) {
+        res.status(400).json({ error: 'Failed to create partner' });
+    }
+};
+exports.createPartner = createPartner;
+const getPartners = async (req, res) => {
+    try {
+        const { data, error } = await supabase_1.supabase
+            .from('admin_users')
+            .select('id, username, discount_code, discount_percentage, is_active, created_at')
+            .eq('role', 'partner')
+            .order('created_at', { ascending: false });
+        if (error)
+            throw error;
+        res.json(data);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to fetch partners' });
+    }
+};
+exports.getPartners = getPartners;
+const getPartnerOrders = async (req, res) => {
+    try {
+        const partnerId = req.headers['admin-id'];
+        // Get partner's discount code
+        const { data: partner, error: partnerError } = await supabase_1.supabase
+            .from('admin_users')
+            .select('discount_code')
+            .eq('id', partnerId)
+            .eq('role', 'partner')
+            .single();
+        if (partnerError || !partner) {
+            return res.status(404).json({ error: 'Partner not found' });
+        }
+        // Get orders using this partner's discount code
+        const { data, error } = await supabase_1.supabase
+            .from('orders')
+            .select(`
+        id, 
+        total_amount, 
+        discount_amount, 
+        created_at,
+        order_items (
+          quantity,
+          products (
+            name
+          )
+        )
+      `)
+            .eq('discount_code', partner.discount_code)
+            .order('created_at', { ascending: false });
+        if (error)
+            throw error;
+        // Format the response to match frontend expectations
+        const formattedOrders = data.map(order => ({
+            ...order,
+            items: order.order_items.map((item) => ({
+                product_name: item.products.name,
+                quantity: item.quantity
+            }))
+        }));
+        res.json(formattedOrders);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to fetch partner orders' });
+    }
+};
+exports.getPartnerOrders = getPartnerOrders;
+const createDriver = async (req, res) => {
+    try {
+        const { username, password, location } = req.body;
+        const admin = req.admin;
+        const driverLocation = admin.is_super_admin ? location : admin.location;
+        if (!driverLocation) {
+            return res.status(400).json({ error: 'Location is required' });
+        }
+        const saltRounds = 10;
+        const password_hash = await bcrypt_1.default.hash(password, saltRounds);
+        const { data, error } = await supabase_1.supabase
+            .from('admin_users')
+            .insert({
+            username,
+            password_hash,
+            is_super_admin: false,
+            role: 'driver',
+            location: driverLocation
+        })
+            .select('id, username, is_active, role, location, created_at')
             .single();
         if (error)
             throw error;
@@ -151,3 +256,26 @@ const createDriver = async (req, res) => {
     }
 };
 exports.createDriver = createDriver;
+const validateDiscountCode = async (req, res) => {
+    try {
+        const { discount_code } = req.body;
+        const { data, error } = await supabase_1.supabase
+            .from('admin_users')
+            .select('discount_code, discount_percentage')
+            .eq('discount_code', discount_code)
+            .eq('role', 'partner')
+            .eq('is_active', true)
+            .single();
+        if (error || !data) {
+            return res.status(404).json({ error: 'Invalid discount code' });
+        }
+        res.json({
+            valid: true,
+            discount_percentage: data.discount_percentage
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to validate discount code' });
+    }
+};
+exports.validateDiscountCode = validateDiscountCode;

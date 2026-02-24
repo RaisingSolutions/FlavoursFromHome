@@ -195,3 +195,105 @@ export const sendCouponEmail = async (
     console.error('Email send error:', error);
   }
 };
+
+export const sendEventConfirmationEmail = async (
+  to: string,
+  details: {
+    firstName: string;
+    eventName: string;
+    adultTickets: number;
+    childTickets: number;
+    totalAmount: number;
+    discountCode: string;
+  }
+) => {
+  try {
+    const { firstName, eventName, adultTickets, childTickets, totalAmount, discountCode } = details;
+    
+    await transporter.sendMail({
+      from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
+      to: to,
+      subject: `Event Booking Confirmed + Your Monthly 15% Discount! - Flavours From Home`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #2c5f2d;">🎉 Booking Confirmed!</h1>
+          <p>Hi ${firstName},</p>
+          <p>Your tickets for <strong>${eventName}</strong> have been confirmed!</p>
+          
+          <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>Booking Details</h3>
+            <p><strong>Adult Tickets:</strong> ${adultTickets}</p>
+            <p><strong>Child Tickets:</strong> ${childTickets}</p>
+            <p><strong>Total Paid:</strong> £${totalAmount.toFixed(2)}</p>
+          </div>
+
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; margin: 30px 0; text-align: center; color: white;">
+            <h2 style="margin: 0 0 15px 0; font-size: 24px;">🎁 Your Monthly 15% Discount!</h2>
+            <p style="font-size: 16px; margin: 0 0 20px 0;">As a thank you, enjoy 15% OFF every month for 12 months!</p>
+            <div style="background: white; padding: 20px; border-radius: 8px; font-size: 28px; font-weight: bold; letter-spacing: 2px; color: #667eea; margin: 20px 0;">
+              ${discountCode}
+            </div>
+            <p style="font-size: 14px; margin: 0;">Valid for 30 days | Max £40 discount</p>
+          </div>
+
+          <p>You'll receive a new discount code every month for the next 12 months. Use it on any order!</p>
+          
+          <p style="margin-top: 30px;">
+            Best regards,<br>
+            <strong>Flavours From Home Team</strong>
+          </p>
+        </div>
+      `,
+    });
+    
+    console.log('Event confirmation email sent to:', to);
+  } catch (error) {
+    console.error('Email send error:', error);
+  }
+};
+
+export const sendMonthlyDiscountCode = async (
+  to: string,
+  details: {
+    firstName: string;
+    discountCode: string;
+    monthNumber: number;
+  }
+) => {
+  try {
+    const { firstName, discountCode, monthNumber } = details;
+    
+    await transporter.sendMail({
+      from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
+      to: to,
+      subject: `Month ${monthNumber} - Your 15% Discount Code! - Flavours From Home`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #2c5f2d;">🎉 Your Monthly Discount is Here!</h1>
+          <p>Hi ${firstName},</p>
+          <p>It's time for your month ${monthNumber} discount code!</p>
+          
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; margin: 30px 0; text-align: center; color: white;">
+            <h2 style="margin: 0 0 15px 0; font-size: 24px;">15% OFF Your Order</h2>
+            <div style="background: white; padding: 20px; border-radius: 8px; font-size: 28px; font-weight: bold; letter-spacing: 2px; color: #667eea; margin: 20px 0;">
+              ${discountCode}
+            </div>
+            <p style="font-size: 14px; margin: 0;">Valid for 30 days | Max £40 discount</p>
+          </div>
+
+          <p>Use this code at checkout to get 15% off your order (up to £40 discount).</p>
+          <p><strong>Remaining months:</strong> ${12 - monthNumber}</p>
+          
+          <p style="margin-top: 30px;">
+            Best regards,<br>
+            <strong>Flavours From Home Team</strong>
+          </p>
+        </div>
+      `,
+    });
+    
+    console.log('Monthly discount email sent to:', to);
+  } catch (error) {
+    console.error('Email send error:', error);
+  }
+};

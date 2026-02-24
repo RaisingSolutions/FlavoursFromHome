@@ -19,12 +19,12 @@ const options = {
         },
         servers: [
             {
-                url: 'http://localhost:3000',
-                description: 'Development server'
+                url: 'https://flavours-from-home.co.uk',
+                description: 'Production server'
             },
             {
-                url: 'https://api.flavoursfromhome.com',
-                description: 'Production server'
+                url: 'http://localhost:3000',
+                description: 'Development server'
             }
         ],
         components: {

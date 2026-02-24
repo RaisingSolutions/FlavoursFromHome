@@ -36,13 +36,19 @@ export default function CheckoutPage({
   const [orderType, setOrderType] = useState<'delivery' | 'collection'>('delivery')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [couponCode, setCouponCode] = useState('')
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; amount: number } | null>(null)
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; amount: number; isEventDiscount?: boolean; percentage?: number; maxDiscount?: number } | null>(null)
   const [verifyingCoupon, setVerifyingCoupon] = useState(false)
 
   const totalAmount = cart.reduce((sum, item) => {
     return sum + (item.price * item.quantity)
   }, 0)
-  const discount = appliedCoupon ? appliedCoupon.amount : 0
+  
+  const discount = appliedCoupon 
+    ? appliedCoupon.isEventDiscount 
+      ? Math.min(totalAmount * (appliedCoupon.percentage! / 100), appliedCoupon.maxDiscount!)
+      : appliedCoupon.amount
+    : 0
+  
   const finalAmount = Math.max(0, totalAmount - discount)
   const isDeliveryMinimumMet = totalAmount >= 20
 
@@ -60,8 +66,20 @@ export default function CheckoutPage({
       const data = await response.json()
       
       if (response.ok) {
-        setAppliedCoupon({ code: couponCode, amount: data.amount })
-        onShowToast(`Coupon applied! £${data.amount} discount`, 'success')
+        if (data.isEventDiscount) {
+          const discountAmount = Math.min(totalAmount * 0.15, 40)
+          setAppliedCoupon({ 
+            code: couponCode, 
+            amount: discountAmount,
+            isEventDiscount: true,
+            percentage: 15,
+            maxDiscount: 40
+          })
+          onShowToast(`Event discount applied! 15% off (£${discountAmount.toFixed(2)})`, 'success')
+        } else {
+          setAppliedCoupon({ code: couponCode, amount: data.amount })
+          onShowToast(`Coupon applied! £${data.amount} discount`, 'success')
+        }
       } else {
         onShowToast(data.error || 'Invalid coupon code', 'error')
       }
@@ -322,7 +340,8 @@ export default function CheckoutPage({
             </div>
             {appliedCoupon && (
               <div style={{ marginTop: '10px', padding: '10px', background: '#d4edda', borderRadius: '4px', color: '#155724' }}>
-                ✓ Coupon "{appliedCoupon.code}" applied - £{appliedCoupon.amount.toFixed(2)} discount
+                ✓ {appliedCoupon.isEventDiscount ? 'Event discount' : `Coupon "${appliedCoupon.code}"`} applied - £{discount.toFixed(2)} discount
+                {appliedCoupon.isEventDiscount && <div style={{ fontSize: '0.85rem', marginTop: '5px' }}>15% off (max £40)</div>}
               </div>
             )}
           </div>

@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { supabase } from '../utils/supabase';
 import { sendWhatsAppMessage } from '../utils/whatsapp';
 import { sendOrderConfirmationEmail } from '../utils/email';
+import { handleEventWebhook } from './eventController';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-11-17.clover' });
 
@@ -27,6 +28,25 @@ export const verifyCoupon = async (req: Request, res: Response) => {
       }
 
       return res.json({ code: coupon.code, amount: coupon.amount, isTestCoupon: false });
+    }
+
+    // Check event discount codes
+    const { data: eventDiscount, error: eventError } = await supabase
+      .from('event_discount_codes')
+      .select('*')
+      .eq('code', code)
+      .single();
+
+    if (!eventError && eventDiscount) {
+      if (eventDiscount.redeemed) {
+        return res.status(400).json({ error: 'Code already used' });
+      }
+
+      if (new Date(eventDiscount.expiry_date) < new Date()) {
+        return res.status(400).json({ error: 'Code expired' });
+      }
+
+      return res.json({ code: eventDiscount.code, amount: 0, isEventDiscount: true, percentage: 15, maxDiscount: 40 });
     }
 
     // Check test coupons (100% discount, never expire)
@@ -56,6 +76,9 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
 
     let discount = 0;
     let isTestCoupon = false;
+    let isEventDiscount = false;
+    let eventDiscountCode = '';
+    
     if (couponCode) {
       // Check regular coupons first
       const { data: coupon } = await supabase
@@ -67,21 +90,37 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
       if (coupon && !coupon.used) {
         discount = coupon.amount;
       } else {
-        // Check test coupons
-        const { data: testCoupon } = await supabase
-          .from('test_coupons')
-          .select('discount_percent')
+        // Check event discount codes
+        const { data: eventCode } = await supabase
+          .from('event_discount_codes')
+          .select('*')
           .eq('code', couponCode)
           .single();
         
-        if (testCoupon) {
-          isTestCoupon = true;
-          // For test coupons, set discount to full subtotal for 100% off
+        if (eventCode && !eventCode.redeemed && new Date(eventCode.expiry_date) > new Date()) {
+          isEventDiscount = true;
+          eventDiscountCode = eventCode.code;
           const subtotal = cart.reduce((sum: number, item: any) => {
             if (item.isFreeRegipallu) return sum;
             return sum + (item.price * item.quantity);
           }, 0);
-          discount = subtotal; // 100% discount
+          discount = Math.min(subtotal * 0.15, 40); // 15% with £40 cap
+        } else {
+          // Check test coupons
+          const { data: testCoupon } = await supabase
+            .from('test_coupons')
+            .select('discount_percent')
+            .eq('code', couponCode)
+            .single();
+          
+          if (testCoupon) {
+            isTestCoupon = true;
+            const subtotal = cart.reduce((sum: number, item: any) => {
+              if (item.isFreeRegipallu) return sum;
+              return sum + (item.price * item.quantity);
+            }, 0);
+            discount = subtotal; // 100% discount
+          }
         }
       }
     }
@@ -96,7 +135,7 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
       price_data: {
         currency: 'gbp',
         product_data: {
-          name: discount > 0 ? `Order Total (${isTestCoupon ? 'TEST 100%' : discount} discount applied)` : 'Order Total',
+          name: discount > 0 ? `Order Total (${isTestCoupon ? 'TEST 100%' : isEventDiscount ? '15% Event' : discount} discount applied)` : 'Order Total',
         },
         unit_amount: Math.round(finalTotal * 100),
       },
@@ -123,10 +162,12 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
         phoneNumber: customerInfo.phoneNumber,
         address: customerInfo.address,
         orderType: customerInfo.orderType,
-        location: customerInfo.location || 'Leeds', // Customer's location
+        location: customerInfo.location || 'Leeds',
         cartData: JSON.stringify(cartData),
         couponCode: couponCode || '',
         isTestCoupon: isTestCoupon.toString(),
+        isEventDiscount: isEventDiscount.toString(),
+        eventDiscountCode: eventDiscountCode,
       },
     });
 
@@ -228,6 +269,16 @@ export const handleWebhook = async (req: Request, res: Response) => {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
       
+      console.log('Session completed. Metadata:', session.metadata);
+      
+      // Check if this is an event booking
+      if (session.metadata?.type === 'event_booking') {
+        console.log('Detected event booking, calling handleEventWebhook');
+        await handleEventWebhook(session);
+        console.log('Event webhook completed successfully');
+        return res.json({ received: true });
+      }
+      
       console.log('Processing payment for session:', session.id);
       console.log('Metadata:', session.metadata);
       
@@ -239,6 +290,8 @@ export const handleWebhook = async (req: Request, res: Response) => {
       const cart = JSON.parse(session.metadata!.cartData);
       const couponCode = session.metadata!.couponCode;
       const isTestCoupon = session.metadata!.isTestCoupon === 'true';
+      const isEventDiscount = session.metadata!.isEventDiscount === 'true';
+      const eventDiscountCode = session.metadata!.eventDiscountCode;
 
       const totalAmount = session.amount_total! / 100;
 
@@ -279,11 +332,23 @@ export const handleWebhook = async (req: Request, res: Response) => {
       console.log('Order items created');
 
       // Mark coupon as used (only for regular coupons, not test coupons)
-      if (couponCode && !isTestCoupon) {
+      if (couponCode && !isTestCoupon && !isEventDiscount) {
         await supabase
           .from('coupons')
           .update({ used: true })
           .eq('code', couponCode);
+      }
+
+      // Mark event discount code as redeemed
+      if (isEventDiscount && eventDiscountCode) {
+        await supabase
+          .from('event_discount_codes')
+          .update({ 
+            redeemed: true, 
+            redemption_date: new Date().toISOString(),
+            order_id: order.id 
+          })
+          .eq('code', eventDiscountCode);
       }
 
       // Decrease inventory for each product

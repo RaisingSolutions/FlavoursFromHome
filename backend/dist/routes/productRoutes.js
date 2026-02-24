@@ -146,6 +146,37 @@ router.post('/', productController_1.createProduct);
 router.post('/record-delivery', productController_1.recordDelivery);
 /**
  * @swagger
+ * /api/products/stock-transfer:
+ *   post:
+ *     summary: Transfer stock between locations
+ *     tags: [Products]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fromLocation:
+ *                 type: string
+ *               toLocation:
+ *                 type: string
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     product_id:
+ *                       type: integer
+ *                     quantity:
+ *                       type: integer
+ *     responses:
+ *       200:
+ *         description: Stock transfer completed
+ */
+router.post('/stock-transfer', productController_1.stockTransfer);
+/**
+ * @swagger
  * /api/products/deliveries/history:
  *   get:
  *     summary: Get delivery history

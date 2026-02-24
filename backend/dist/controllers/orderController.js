@@ -43,7 +43,8 @@ const stripe_1 = __importDefault(require("stripe"));
 const stripe = new stripe_1.default(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-11-17.clover' });
 const getAllOrders = async (req, res) => {
     try {
-        const { data, error } = await supabase_1.supabase
+        const location = req.query.location; // Filter by location for location admins
+        let query = supabase_1.supabase
             .from('orders')
             .select(`
         id,
@@ -52,9 +53,12 @@ const getAllOrders = async (req, res) => {
         phone_number,
         address,
         total_amount,
+        discount_code,
+        discount_amount,
         payment_method,
         order_date,
         status,
+        location,
         driver_id,
         order_items (
           quantity,
@@ -64,6 +68,11 @@ const getAllOrders = async (req, res) => {
         )
       `)
             .order('order_date', { ascending: false });
+        // Filter by location if specified (for location admins)
+        if (location) {
+            query = query.eq('location', location);
+        }
+        const { data, error } = await query;
         if (error) {
             return res.status(500).json({ error: 'Failed to fetch orders' });
         }
@@ -93,7 +102,7 @@ const getAllOrders = async (req, res) => {
 exports.getAllOrders = getAllOrders;
 const createOrder = async (req, res) => {
     try {
-        const { first_name, email, phone_number, address, payment_method, total_amount, items } = req.body;
+        const { first_name, email, phone_number, address, payment_method, total_amount, items, location, discount_code, discount_amount } = req.body;
         const { data: order, error: orderError } = await supabase_1.supabase
             .from('orders')
             .insert({
@@ -103,7 +112,10 @@ const createOrder = async (req, res) => {
             address,
             payment_method,
             total_amount,
-            status: 'pending'
+            location, // Leeds, Derby, or Sheffield
+            status: 'pending',
+            discount_code: discount_code || null,
+            discount_amount: discount_amount || 0
         })
             .select()
             .single();
@@ -141,7 +153,8 @@ const createOrder = async (req, res) => {
         }).join('\n');
         const orderType = address === 'Collection' ? '📦 Collection' : '🚚 Delivery';
         const addressLine = address === 'Collection' ? '' : `\nAddress: ${address}`;
-        const message = `✅ Order #${order.id} Confirmed!\n\nCustomer: ${first_name}\nEmail: ${email}\nPhone: ${phone_number}\nType: ${orderType}${addressLine}\n\nItems:\n${itemsWithNames}\n\nTotal: £${total_amount}\nPayment: ${payment_method}\n\nThank you for your order!`;
+        const discountLine = discount_amount > 0 ? `\nDiscount: -£${discount_amount}` : '';
+        const message = `✅ Order #${order.id} Confirmed!\n\nCustomer: ${first_name}\nEmail: ${email}\nPhone: ${phone_number}\nType: ${orderType}${addressLine}\n\nItems:\n${itemsWithNames}${discountLine}\n\nTotal: £${total_amount}\nPayment: ${payment_method}\n\nThank you for your order!`;
         (0, whatsapp_1.sendWhatsAppMessage)(phone_number, message);
         const adminPhone = process.env.ADMIN_PHONE_NUMBER;
         if (adminPhone) {

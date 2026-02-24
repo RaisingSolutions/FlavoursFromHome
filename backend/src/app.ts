@@ -11,6 +11,8 @@ import deliveryRoutes from './routes/deliveryRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import feedbackRoutes from './routes/feedbackRoutes';
 import dealRoutes from './routes/dealRoutes';
+import eventRoutes from './routes/eventRoutes';
+import organiserRoutes from './routes/organiserRoutes';
 
 const app = express();
 
@@ -39,5 +41,7 @@ app.use('/api/delivery', deliveryRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/deals', dealRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/organiser', organiserRoutes);
 
 export default app;

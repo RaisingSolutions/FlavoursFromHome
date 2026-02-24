@@ -15,6 +15,9 @@ const orderRoutes_1 = __importDefault(require("./routes/orderRoutes"));
 const deliveryRoutes_1 = __importDefault(require("./routes/deliveryRoutes"));
 const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
 const feedbackRoutes_1 = __importDefault(require("./routes/feedbackRoutes"));
+const dealRoutes_1 = __importDefault(require("./routes/dealRoutes"));
+const eventRoutes_1 = __importDefault(require("./routes/eventRoutes"));
+const organiserRoutes_1 = __importDefault(require("./routes/organiserRoutes"));
 const app = (0, express_1.default)();
 // Middleware
 const corsOrigin = process.env.CORS_ORIGIN === '*' ? true : process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'];
@@ -36,4 +39,7 @@ app.use('/api/orders', orderRoutes_1.default);
 app.use('/api/delivery', deliveryRoutes_1.default);
 app.use('/api/payment', paymentRoutes_1.default);
 app.use('/api/feedback', feedbackRoutes_1.default);
+app.use('/api/deals', dealRoutes_1.default);
+app.use('/api/events', eventRoutes_1.default);
+app.use('/api/organiser', organiserRoutes_1.default);
 exports.default = app;

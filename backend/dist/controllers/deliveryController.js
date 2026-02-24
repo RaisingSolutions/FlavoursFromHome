@@ -246,14 +246,15 @@ const generateRoutesFromOrders = async (req, res) => {
 exports.generateRoutesFromOrders = generateRoutesFromOrders;
 const assignRoute = async (req, res) => {
     try {
-        const { driverId, orderIds, routeData } = req.body;
-        // Create delivery route
+        const { driverId, orderIds, routeData, location } = req.body;
+        // Create delivery route with location
         const { data: route, error: routeError } = await supabase_1.supabase
             .from('delivery_routes')
             .insert({
             driver_id: driverId,
             route_data: routeData,
-            status: 'assigned'
+            status: 'assigned',
+            location: location || 'Leeds'
         })
             .select()
             .single();
@@ -280,6 +281,12 @@ exports.assignRoute = assignRoute;
 const getDriverDeliveries = async (req, res) => {
     try {
         const driverId = req.headers['driver-id'];
+        // Get driver's location first
+        const { data: driver } = await supabase_1.supabase
+            .from('admin_users')
+            .select('location')
+            .eq('id', driverId)
+            .single();
         // Get the driver's route
         const { data: route, error: routeError } = await supabase_1.supabase
             .from('delivery_routes')
@@ -287,11 +294,16 @@ const getDriverDeliveries = async (req, res) => {
             .eq('driver_id', driverId)
             .eq('status', 'assigned')
             .single();
-        const { data: orders, error } = await supabase_1.supabase
+        let query = supabase_1.supabase
             .from('orders')
             .select('id, first_name, address, phone_number, status, route_id')
             .eq('driver_id', driverId)
             .in('status', ['ready', 'delivered']);
+        // Filter by driver's location
+        if (driver && driver.location) {
+            query = query.eq('location', driver.location);
+        }
+        const { data: orders, error } = await query;
         if (error)
             throw error;
         // Sort orders based on route_data order if available

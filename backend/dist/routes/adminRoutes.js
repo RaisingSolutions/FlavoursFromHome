@@ -129,7 +129,7 @@ router.post('/users', superAdminMiddleware_1.requireSuperAdmin, adminController_
  *       201:
  *         description: Driver created
  */
-router.post('/drivers', superAdminMiddleware_1.requireSuperAdmin, adminController_1.createDriver);
+router.post('/drivers', superAdminMiddleware_1.requireAdmin, adminController_1.createDriver);
 /**
  * @swagger
  * /api/admin/users/{id}/status:
@@ -177,4 +177,9 @@ router.put('/users/:id/status', superAdminMiddleware_1.requireSuperAdmin, adminC
  *         description: Admin user deleted
  */
 router.delete('/users/:id', superAdminMiddleware_1.requireSuperAdmin, adminController_1.deleteAdmin);
+// Partner routes
+router.get('/partners', adminController_1.getPartners);
+router.post('/partners', superAdminMiddleware_1.requireSuperAdmin, adminController_1.createPartner);
+router.get('/partner-orders', adminController_1.getPartnerOrders);
+router.post('/validate-discount', adminController_1.validateDiscountCode);
 exports.default = router;

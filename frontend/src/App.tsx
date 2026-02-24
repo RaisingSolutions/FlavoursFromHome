@@ -7,6 +7,11 @@ import CheckoutPage from './components/CheckoutPage'
 import SuccessPage from './components/SuccessPage'
 import FeedbackPage from './components/FeedbackPage'
 import OurStoryPage from './components/OurStoryPage'
+import SponsoredEventsPage from './components/SponsoredEventsPage'
+import EventDetailsPage from './components/EventDetailsPage'
+import EventSuccessPage from './components/EventSuccessPage'
+import OrganiserLoginPage from './components/OrganiserLoginPage'
+import OrganiserDashboard from './components/OrganiserDashboard'
 import Toast from './components/Toast'
 
 interface CartItem {
@@ -47,12 +52,21 @@ function App() {
     return []
   })
   const [cartCount, setCartCount] = useState(0)
-  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout' | 'success' | 'feedback' | 'story'>(() => {
+  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout' | 'success' | 'feedback' | 'story' | 'events' | 'event-details' | 'event-success' | 'organiser-login' | 'organiser-dashboard'>(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('order')) return 'feedback'
     if (params.get('success') === 'true') return 'success'
     if (params.get('page') === 'story') return 'story'
+    if (params.get('page') === 'events') return 'events'
+    if (params.get('page') === 'organiser') return 'organiser-login'
+    if (window.location.pathname.includes('/events/success')) return 'event-success'
     return 'home'
+  })
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null)
+  const [organiserToken, setOrganiserToken] = useState<string | null>(() => localStorage.getItem('organiserToken'))
+  const [organiserEventId, setOrganiserEventId] = useState<number | null>(() => {
+    const id = localStorage.getItem('organiserEventId')
+    return id ? parseInt(id) : null
   })
 
   useEffect(() => {
@@ -63,13 +77,27 @@ function App() {
       setCurrentPage('success')
     } else if (params.get('page') === 'story') {
       setCurrentPage('story')
+    } else if (params.get('page') === 'events') {
+      setCurrentPage('events')
+    } else if (params.get('page') === 'organiser') {
+      if (organiserToken && organiserEventId) {
+        setCurrentPage('organiser-dashboard')
+      } else {
+        setCurrentPage('organiser-login')
+      }
+    } else if (window.location.pathname.includes('/events/success')) {
+      setCurrentPage('event-success')
     }
   }, [])
 
-  const navigateToPage = (page: 'home' | 'cart' | 'story') => {
+  const navigateToPage = (page: 'home' | 'cart' | 'story' | 'events' | 'organiser-login') => {
     setCurrentPage(page)
     if (page === 'story') {
       window.history.pushState({}, '', '?page=story')
+    } else if (page === 'events') {
+      window.history.pushState({}, '', '?page=events')
+    } else if (page === 'organiser-login') {
+      window.history.pushState({}, '', '?page=organiser')
     } else if (page === 'home') {
       window.history.pushState({}, '', '/')
     }
@@ -199,6 +227,9 @@ function App() {
               <button className="cart-btn" onClick={() => navigateToPage('story')} style={{ marginRight: '10px' }}>
                 Our Story
               </button>
+              <button className="cart-btn" onClick={() => navigateToPage('events')} style={{ marginRight: '10px' }}>
+                Sponsored Events
+              </button>
               <button className="cart-btn" onClick={() => setCurrentPage('cart')}>
                 🛒 Cart ({cartCount})
               </button>
@@ -240,6 +271,43 @@ function App() {
             />
           ) : currentPage === 'story' ? (
             <OurStoryPage />
+          ) : currentPage === 'events' ? (
+            <SponsoredEventsPage 
+              onEventClick={(eventId) => {
+                setSelectedEventId(eventId)
+                setCurrentPage('event-details')
+              }}
+            />
+          ) : currentPage === 'event-details' && selectedEventId ? (
+            <EventDetailsPage 
+              eventId={selectedEventId}
+              onBack={() => setCurrentPage('events')}
+              onShowToast={(message, type) => setToast({ message, type })}
+            />
+          ) : currentPage === 'event-success' ? (
+            <EventSuccessPage />
+          ) : currentPage === 'organiser-login' ? (
+            <OrganiserLoginPage 
+              onLoginSuccess={(token, eventId) => {
+                setOrganiserToken(token)
+                setOrganiserEventId(eventId)
+                setCurrentPage('organiser-dashboard')
+              }}
+              onShowToast={(message, type) => setToast({ message, type })}
+            />
+          ) : currentPage === 'organiser-dashboard' && organiserToken && organiserEventId ? (
+            <OrganiserDashboard 
+              token={organiserToken}
+              eventId={organiserEventId}
+              onLogout={() => {
+                localStorage.removeItem('organiserToken')
+                localStorage.removeItem('organiserEventId')
+                setOrganiserToken(null)
+                setOrganiserEventId(null)
+                setCurrentPage('organiser-login')
+              }}
+              onShowToast={(message, type) => setToast({ message, type })}
+            />
           ) : (
             <HomePage 
               categories={categories}

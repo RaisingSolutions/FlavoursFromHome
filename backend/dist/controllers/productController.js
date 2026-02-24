@@ -1,11 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDeliveries = exports.recordDelivery = exports.toggleProductStatus = exports.deleteProduct = exports.updateProduct = exports.createProduct = exports.getProductsByCategory = exports.getProductById = exports.getAllProducts = void 0;
+exports.getDeliveries = exports.recordDelivery = exports.stockTransfer = exports.toggleProductStatus = exports.deleteProduct = exports.updateProduct = exports.createProduct = exports.getProductsByCategory = exports.getProductById = exports.getAllProducts = void 0;
 const supabase_1 = require("../utils/supabase");
 const whatsapp_1 = require("../utils/whatsapp");
 const getAllProducts = async (req, res) => {
     try {
         const isAdmin = req.query.admin === 'true';
+        const location = req.query.location;
         let query = supabase_1.supabase
             .from('products')
             .select(`
@@ -16,10 +17,13 @@ const getAllProducts = async (req, res) => {
         weight,
         image_url,
         category_id,
-        inventory,
+        inventory_leeds,
+        inventory_derby,
+        inventory_sheffield,
         is_active,
         has_limit,
         max_per_order,
+        origin,
         categories (
           name
         )
@@ -49,14 +53,24 @@ const getAllProducts = async (req, res) => {
         if (ratings[14]) {
             ratings[15] = ratings[14];
         }
-        // Add average rating to products
-        const productsWithRatings = data.map(product => ({
-            ...product,
-            average_rating: ratings[product.id]
-                ? parseFloat((ratings[product.id].total / ratings[product.id].count).toFixed(1))
-                : null,
-            rating_count: ratings[product.id]?.count || 0
-        }));
+        // Add average rating and location-specific inventory to products
+        const productsWithRatings = data.map(product => {
+            let inventory = 0;
+            if (location === 'Leeds')
+                inventory = product.inventory_leeds;
+            else if (location === 'Derby')
+                inventory = product.inventory_derby;
+            else if (location === 'Sheffield')
+                inventory = product.inventory_sheffield;
+            return {
+                ...product,
+                inventory, // Location-specific inventory for customers
+                average_rating: ratings[product.id]
+                    ? parseFloat((ratings[product.id].total / ratings[product.id].count).toFixed(1))
+                    : null,
+                rating_count: ratings[product.id]?.count || 0
+            };
+        });
         res.json(productsWithRatings);
     }
     catch (error) {
@@ -96,6 +110,7 @@ exports.getProductById = getProductById;
 const getProductsByCategory = async (req, res) => {
     try {
         const { categoryId } = req.params;
+        const location = req.query.location;
         const { data, error } = await supabase_1.supabase
             .from('products')
             .select(`
@@ -106,6 +121,12 @@ const getProductsByCategory = async (req, res) => {
         weight,
         image_url,
         category_id,
+        inventory_leeds,
+        inventory_derby,
+        inventory_sheffield,
+        has_limit,
+        max_per_order,
+        origin,
         categories (
           name
         )
@@ -114,7 +135,21 @@ const getProductsByCategory = async (req, res) => {
             .eq('is_active', true);
         if (error)
             throw error;
-        res.json(data);
+        // Add location-specific inventory
+        const productsWithInventory = data.map(product => {
+            let inventory = 0;
+            if (location === 'Leeds')
+                inventory = product.inventory_leeds;
+            else if (location === 'Derby')
+                inventory = product.inventory_derby;
+            else if (location === 'Sheffield')
+                inventory = product.inventory_sheffield;
+            return {
+                ...product,
+                inventory
+            };
+        });
+        res.json(productsWithInventory);
     }
     catch (error) {
         res.status(500).json({ error: 'Failed to fetch products' });
@@ -123,7 +158,7 @@ const getProductsByCategory = async (req, res) => {
 exports.getProductsByCategory = getProductsByCategory;
 const createProduct = async (req, res) => {
     try {
-        const { name, description, price, category_id, weight, image_url, inventory, has_limit, max_per_order } = req.body;
+        const { name, description, price, category_id, weight, image_url, inventory_leeds, inventory_derby, inventory_sheffield, has_limit, max_per_order, origin } = req.body;
         const { data, error } = await supabase_1.supabase
             .from('products')
             .insert({
@@ -133,9 +168,12 @@ const createProduct = async (req, res) => {
             category_id,
             weight,
             image_url,
-            inventory: inventory || 0,
+            inventory_leeds: inventory_leeds || 0,
+            inventory_derby: inventory_derby || 0,
+            inventory_sheffield: inventory_sheffield || 0,
             has_limit: has_limit || false,
-            max_per_order: max_per_order || null
+            max_per_order: max_per_order || null,
+            origin: origin || null
         })
             .select()
             .single();
@@ -151,7 +189,7 @@ exports.createProduct = createProduct;
 const updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, price, category_id, weight, image_url, inventory, has_limit, max_per_order } = req.body;
+        const { name, description, price, category_id, weight, image_url, inventory_leeds, inventory_derby, inventory_sheffield, has_limit, max_per_order, origin } = req.body;
         const { data, error } = await supabase_1.supabase
             .from('products')
             .update({
@@ -161,9 +199,12 @@ const updateProduct = async (req, res) => {
             category_id,
             weight,
             image_url,
-            inventory,
+            inventory_leeds,
+            inventory_derby,
+            inventory_sheffield,
             has_limit,
             max_per_order,
+            origin,
             updated_at: new Date().toISOString()
         })
             .eq('id', id)
@@ -171,11 +212,18 @@ const updateProduct = async (req, res) => {
             .single();
         if (error)
             throw error;
-        // Send WhatsApp alert if inventory is 10 or less
-        if (inventory <= 10) {
+        // Send WhatsApp alert if any location inventory is 10 or less
+        const lowStockLocations = [];
+        if (inventory_leeds <= 10)
+            lowStockLocations.push(`Leeds: ${inventory_leeds}`);
+        if (inventory_derby <= 10)
+            lowStockLocations.push(`Derby: ${inventory_derby}`);
+        if (inventory_sheffield <= 10)
+            lowStockLocations.push(`Sheffield: ${inventory_sheffield}`);
+        if (lowStockLocations.length > 0) {
             const adminPhone = process.env.ADMIN_PHONE_NUMBER;
             if (adminPhone) {
-                const message = `⚠️ Low Stock Alert!\n\nProduct: ${name}\nCurrent Stock: ${inventory}\n\nPlease restock soon.`;
+                const message = `⚠️ Low Stock Alert!\n\nProduct: ${name}\n${lowStockLocations.join('\n')}\n\nPlease restock soon.`;
                 (0, whatsapp_1.sendWhatsAppMessage)(adminPhone, message);
             }
         }
@@ -219,13 +267,73 @@ const toggleProductStatus = async (req, res) => {
     }
 };
 exports.toggleProductStatus = toggleProductStatus;
-const recordDelivery = async (req, res) => {
+const stockTransfer = async (req, res) => {
     try {
-        const { deliveryDate, items } = req.body;
-        // Create delivery record
+        const { fromLocation, toLocation, items } = req.body;
+        // Create delivery record for the transfer
         const { data: delivery, error: deliveryError } = await supabase_1.supabase
             .from('deliveries')
-            .insert({ delivery_date: deliveryDate })
+            .insert({
+            delivery_date: new Date().toISOString(),
+            location: toLocation,
+            transfer_from: fromLocation
+        })
+            .select()
+            .single();
+        if (deliveryError)
+            throw deliveryError;
+        for (const item of items) {
+            const { data: product } = await supabase_1.supabase
+                .from('products')
+                .select('inventory_leeds, inventory_derby, inventory_sheffield')
+                .eq('id', item.product_id)
+                .single();
+            if (!product)
+                continue;
+            // Save delivery item for the transfer
+            await supabase_1.supabase
+                .from('delivery_items')
+                .insert({
+                delivery_id: delivery.id,
+                product_id: item.product_id,
+                quantity: item.quantity
+            });
+            const updateData = {};
+            if (fromLocation === 'Leeds')
+                updateData.inventory_leeds = product.inventory_leeds - item.quantity;
+            else if (fromLocation === 'Derby')
+                updateData.inventory_derby = product.inventory_derby - item.quantity;
+            else if (fromLocation === 'Sheffield')
+                updateData.inventory_sheffield = product.inventory_sheffield - item.quantity;
+            if (toLocation === 'Leeds')
+                updateData.inventory_leeds = (updateData.inventory_leeds !== undefined ? updateData.inventory_leeds : product.inventory_leeds) + item.quantity;
+            else if (toLocation === 'Derby')
+                updateData.inventory_derby = (updateData.inventory_derby !== undefined ? updateData.inventory_derby : product.inventory_derby) + item.quantity;
+            else if (toLocation === 'Sheffield')
+                updateData.inventory_sheffield = (updateData.inventory_sheffield !== undefined ? updateData.inventory_sheffield : product.inventory_sheffield) + item.quantity;
+            await supabase_1.supabase
+                .from('products')
+                .update(updateData)
+                .eq('id', item.product_id);
+        }
+        res.json({ success: true, message: 'Stock transfer completed' });
+    }
+    catch (error) {
+        console.error('Stock transfer error:', error);
+        res.status(400).json({ error: 'Failed to complete stock transfer', details: error.message });
+    }
+};
+exports.stockTransfer = stockTransfer;
+const recordDelivery = async (req, res) => {
+    try {
+        const { deliveryDate, items, location } = req.body;
+        // Create delivery record with location
+        const { data: delivery, error: deliveryError } = await supabase_1.supabase
+            .from('deliveries')
+            .insert({
+            delivery_date: deliveryDate,
+            location: location || 'Leeds'
+        })
             .select()
             .single();
         if (deliveryError)
@@ -240,16 +348,23 @@ const recordDelivery = async (req, res) => {
                 product_id: item.product_id,
                 quantity: item.quantity
             });
-            // Update product inventory
+            // Update product inventory for specific location
             const { data: product } = await supabase_1.supabase
                 .from('products')
-                .select('inventory')
+                .select('inventory_leeds, inventory_derby, inventory_sheffield')
                 .eq('id', item.product_id)
                 .single();
             if (product) {
+                const updateData = {};
+                if (location === 'Leeds')
+                    updateData.inventory_leeds = product.inventory_leeds + item.quantity;
+                else if (location === 'Derby')
+                    updateData.inventory_derby = product.inventory_derby + item.quantity;
+                else if (location === 'Sheffield')
+                    updateData.inventory_sheffield = product.inventory_sheffield + item.quantity;
                 await supabase_1.supabase
                     .from('products')
-                    .update({ inventory: product.inventory + item.quantity })
+                    .update(updateData)
                     .eq('id', item.product_id);
             }
         }
@@ -263,11 +378,14 @@ const recordDelivery = async (req, res) => {
 exports.recordDelivery = recordDelivery;
 const getDeliveries = async (req, res) => {
     try {
-        const { data, error } = await supabase_1.supabase
+        const location = req.query.location;
+        let query = supabase_1.supabase
             .from('deliveries')
             .select(`
         id,
         delivery_date,
+        location,
+        transfer_from,
         delivery_items (
           quantity,
           products (
@@ -276,6 +394,11 @@ const getDeliveries = async (req, res) => {
         )
       `)
             .order('delivery_date', { ascending: false });
+        // Filter by location if specified
+        if (location) {
+            query = query.eq('location', location);
+        }
+        const { data, error } = await query;
         if (error)
             throw error;
         // Format the data

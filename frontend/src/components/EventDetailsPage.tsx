@@ -1,0 +1,295 @@
+import { useState, useEffect } from 'react'
+
+interface EventDetailsPageProps {
+  eventId: number
+  onBack: () => void
+  onShowToast: (message: string, type: 'success' | 'error') => void
+}
+
+export default function EventDetailsPage({ eventId, onBack, onShowToast }: EventDetailsPageProps) {
+  const [event, setEvent] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [firstName, setFirstName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [adultTickets, setAdultTickets] = useState(0)
+  const [childTickets, setChildTickets] = useState(0)
+  const [marketingConsent, setMarketingConsent] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    fetchEvent()
+  }, [eventId])
+
+  const fetchEvent = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/events/${eventId}`)
+      const data = await response.json()
+      setEvent(data)
+    } catch (error) {
+      onShowToast('Failed to load event', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const totalAmount = (adultTickets * (event?.adult_price || 0)) + (childTickets * (event?.child_price || 0))
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (adultTickets === 0 && childTickets === 0) {
+      onShowToast('Please select at least one ticket', 'error')
+      return
+    }
+
+    if (!marketingConsent) {
+      onShowToast('Please agree to receive your monthly discount codes', 'error')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/events/${eventId}/book`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId,
+          customerInfo: { firstName, email, phoneNumber, marketingConsent },
+          adultTickets,
+          childTickets
+        })
+      })
+
+      const data = await response.json()
+      
+      if (response.ok) {
+        window.location.href = data.url
+      } else {
+        onShowToast(data.error || 'Booking failed', 'error')
+        setIsSubmitting(false)
+      }
+    } catch (error) {
+      onShowToast('Failed to process booking', 'error')
+      setIsSubmitting(false)
+    }
+  }
+
+  if (loading) {
+    return <div style={{ textAlign: 'center', padding: '60px' }}>Loading event...</div>
+  }
+
+  if (!event) {
+    return <div style={{ textAlign: 'center', padding: '60px' }}>Event not found</div>
+  }
+
+  return (
+    <section className="event-details-page">
+      <button onClick={onBack} style={{ marginBottom: '20px', padding: '10px 20px', cursor: 'pointer' }}>
+        ← Back to Events
+      </button>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginTop: '20px' }}>
+        <div>
+          <img src={event.image_url} alt={event.name} style={{ width: '100%', borderRadius: '12px' }} />
+          
+          <h1 style={{ marginTop: '20px' }}>{event.name}</h1>
+          <p style={{ color: '#666', lineHeight: '1.6' }}>{event.description}</p>
+
+          <div style={{ marginTop: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+              <span>📅</span>
+              <span>{new Date(event.event_date).toLocaleString()}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+              <span>📍</span>
+              <span>{event.venue_address}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>🎗️</span>
+              <span>Sponsored by {event.sponsor_name}</span>
+            </div>
+          </div>
+
+          <div style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            padding: '30px',
+            borderRadius: '12px',
+            marginTop: '30px',
+            color: 'white'
+          }}>
+            <h3 style={{ margin: '0 0 15px', fontSize: '22px' }}>🎁 Special Offer!</h3>
+            <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.6' }}>
+              Book tickets and receive <strong>15% OFF</strong> every month for 12 months on all food orders!
+              <br/><br/>
+              You'll receive a unique discount code via email each month (max £40 discount per order).
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <form onSubmit={handleSubmit} style={{
+            background: '#f9f9f9',
+            padding: '30px',
+            borderRadius: '12px',
+            border: '2px solid #e0e0e0'
+          }}>
+            <h2 style={{ marginTop: 0 }}>Book Tickets</h2>
+
+            <div className="form-group">
+              <label>First Name *</label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Email *</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Phone Number *</label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                required
+              />
+            </div>
+
+            <div style={{ marginTop: '20px' }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '15px',
+                background: 'white',
+                borderRadius: '8px',
+                marginBottom: '15px'
+              }}>
+                <div>
+                  <div style={{ fontWeight: 'bold' }}>Adult Tickets</div>
+                  <div style={{ fontSize: '14px', color: '#666' }}>
+                    £{event.adult_price} each ({event.adultRemaining} available)
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setAdultTickets(Math.max(0, adultTickets - 1))}
+                    style={{ padding: '5px 15px', fontSize: '18px' }}
+                  >
+                    -
+                  </button>
+                  <span style={{ fontSize: '18px', fontWeight: 'bold', minWidth: '30px', textAlign: 'center' }}>
+                    {adultTickets}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAdultTickets(Math.min(event.adultRemaining, adultTickets + 1))}
+                    style={{ padding: '5px 15px', fontSize: '18px' }}
+                    disabled={adultTickets >= event.adultRemaining}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '15px',
+                background: 'white',
+                borderRadius: '8px'
+              }}>
+                <div>
+                  <div style={{ fontWeight: 'bold' }}>Child Tickets</div>
+                  <div style={{ fontSize: '14px', color: '#666' }}>
+                    £{event.child_price} each ({event.childRemaining} available)
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setChildTickets(Math.max(0, childTickets - 1))}
+                    style={{ padding: '5px 15px', fontSize: '18px' }}
+                  >
+                    -
+                  </button>
+                  <span style={{ fontSize: '18px', fontWeight: 'bold', minWidth: '30px', textAlign: 'center' }}>
+                    {childTickets}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setChildTickets(Math.min(event.childRemaining, childTickets + 1))}
+                    style={{ padding: '5px 15px', fontSize: '18px' }}
+                    disabled={childTickets >= event.childRemaining}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              marginTop: '20px',
+              padding: '15px',
+              background: 'white',
+              borderRadius: '8px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 'bold' }}>
+                <span>Total:</span>
+                <span>£{totalAmount.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '20px' }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  style={{ marginTop: '4px' }}
+                />
+                <span style={{ fontSize: '14px', lineHeight: '1.5' }}>
+                  I agree to receive monthly discount codes via email for 12 months *
+                </span>
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting || totalAmount === 0}
+              style={{
+                width: '100%',
+                padding: '15px',
+                marginTop: '20px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                opacity: isSubmitting || totalAmount === 0 ? 0.6 : 1
+              }}
+            >
+              {isSubmitting ? 'Processing...' : 'Proceed to Payment'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+  )
+}

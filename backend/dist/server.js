@@ -6,7 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const app_1 = __importDefault(require("./app"));
+const discountCron_1 = require("./utils/discountCron");
 const PORT = process.env.PORT || 5000;
 app_1.default.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    (0, discountCron_1.startDiscountCodeCron)();
 });
