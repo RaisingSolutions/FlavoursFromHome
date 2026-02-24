@@ -118,10 +118,6 @@ export default function SponsoredEventsPage({ onEventClick }: SponsoredEventsPag
                       <span>📍</span>
                       <span style={{ fontSize: '14px' }}>{event.venue_address}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>🎗️</span>
-                      <span style={{ fontSize: '14px' }}>Sponsored by {event.sponsor_name}</span>
-                    </div>
                   </div>
 
                   <div style={{

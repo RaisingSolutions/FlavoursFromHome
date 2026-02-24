@@ -1,4 +1,19 @@
+import { useState, useEffect } from 'react'
+
 export default function EventSuccessPage() {
+  const [hasConsent, setHasConsent] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const sessionId = urlParams.get('session_id')
+    
+    if (sessionId) {
+      fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/events/booking-consent/${sessionId}`)
+        .then(res => res.json())
+        .then(data => setHasConsent(data.marketingConsent))
+        .catch(() => setHasConsent(false))
+    }
+  }, [])
   return (
     <section style={{
       display: 'flex',
@@ -21,6 +36,7 @@ export default function EventSuccessPage() {
           Thank you for booking! Your tickets have been confirmed and sent to your email.
         </p>
 
+        {hasConsent && (
         <div style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           padding: '30px',
@@ -30,13 +46,14 @@ export default function EventSuccessPage() {
         }}>
           <h3 style={{ margin: '0 0 15px', fontSize: '22px' }}>🎁 Your Monthly Discount!</h3>
           <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.6' }}>
-            Check your email for your first <strong>15% discount code</strong>!
+            Check your email for your first <strong>10% discount code</strong>!
             <br/><br/>
-            You'll receive a new code every month for the next 12 months.
+            You'll receive a new code every month until end of 2026.
             <br/>
             Use it on any food order (max £40 discount per order).
           </p>
         </div>
+        )}
 
         <button
           onClick={() => window.location.href = '/'}

@@ -213,7 +213,9 @@ export const sendEventConfirmationEmail = async (
     await transporter.sendMail({
       from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
       to: to,
-      subject: `Event Booking Confirmed + Your Monthly 10% Discount! - Flavours From Home`,
+      subject: discountCode 
+        ? `Event Booking Confirmed + Your Monthly 10% Discount! - Flavours From Home`
+        : `Event Booking Confirmed - Flavours From Home`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #2c5f2d;">🎉 Booking Confirmed!</h1>
@@ -227,6 +229,7 @@ export const sendEventConfirmationEmail = async (
             <p><strong>Total Paid:</strong> £${totalAmount.toFixed(2)}</p>
           </div>
 
+          ${discountCode ? `
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; margin: 30px 0; text-align: center; color: white;">
             <h2 style="margin: 0 0 15px 0; font-size: 24px;">🎁 Your Monthly 10% Discount!</h2>
             <p style="font-size: 16px; margin: 0 0 20px 0;">As a thank you, enjoy 10% OFF every month until end of 2026!</p>
@@ -237,6 +240,7 @@ export const sendEventConfirmationEmail = async (
           </div>
 
           <p>You'll receive a new discount code every month until the end of 2026. Use it on any order!</p>
+          ` : ''}
           
           <p style="margin-top: 30px;">
             Best regards,<br>

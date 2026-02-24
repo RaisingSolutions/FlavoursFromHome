@@ -174,48 +174,16 @@ export default function OrganiserDashboard({ token, eventId, onLogout, onShowToa
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
           <div>
-            <h3>Adult Tickets</h3>
-            <div style={{ fontSize: '14px', color: '#666', marginBottom: '10px' }}>
-              {dashboard.sold.adult} sold / {dashboard.capacity.adult} total
-            </div>
-            <div style={{
-              height: '20px',
-              background: '#e0e0e0',
-              borderRadius: '10px',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                height: '100%',
-                width: `${(dashboard.sold.adult / dashboard.capacity.adult) * 100}%`,
-                background: '#667eea',
-                transition: 'width 0.5s'
-              }} />
-            </div>
-            <div style={{ marginTop: '10px', fontSize: '16px', fontWeight: 'bold', color: '#28a745' }}>
-              {dashboard.remaining.adult} remaining
+            <h3>Adult Tickets Sold</h3>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#667eea' }}>
+              {dashboard.sold.adult}
             </div>
           </div>
 
           <div>
-            <h3>Child Tickets</h3>
-            <div style={{ fontSize: '14px', color: '#666', marginBottom: '10px' }}>
-              {dashboard.sold.child} sold / {dashboard.capacity.child} total
-            </div>
-            <div style={{
-              height: '20px',
-              background: '#e0e0e0',
-              borderRadius: '10px',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                height: '100%',
-                width: `${(dashboard.sold.child / dashboard.capacity.child) * 100}%`,
-                background: '#764ba2',
-                transition: 'width 0.5s'
-              }} />
-            </div>
-            <div style={{ marginTop: '10px', fontSize: '16px', fontWeight: 'bold', color: '#28a745' }}>
-              {dashboard.remaining.child} remaining
+            <h3>Child Tickets Sold</h3>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#764ba2' }}>
+              {dashboard.sold.child}
             </div>
           </div>
         </div>

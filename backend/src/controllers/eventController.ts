@@ -40,7 +40,7 @@ export const getEventById = async (req: Request, res: Response) => {
 
 export const createEventBooking = async (req: Request, res: Response) => {
   try {
-    const { eventId, customerInfo, adultTickets, childTickets, couponCode } = req.body;
+    const { eventId, customerInfo, adultTickets, childTickets, parentTickets, couponCode } = req.body;
 
     const { data: event, error: eventError } = await supabase
       .from('events')
@@ -52,7 +52,7 @@ export const createEventBooking = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Event not found' });
     }
 
-    const totalTickets = adultTickets + childTickets;
+    const totalTickets = adultTickets + childTickets + (parentTickets || 0);
     const remaining = event.total_capacity - event.total_sold;
 
     if (totalTickets > remaining) {
@@ -89,7 +89,7 @@ export const createEventBooking = async (req: Request, res: Response) => {
           currency: 'gbp',
           product_data: {
             name: `${event.name} - Tickets`,
-            description: `${adultTickets} Adult, ${childTickets} Child${appliedCouponCode ? ` (${discountPercentage}% off)` : ''}`,
+            description: `${adultTickets} Adult, ${childTickets} Child${parentTickets ? `, ${parentTickets} Visiting Parents` : ''}${appliedCouponCode ? ` (${discountPercentage}% off)` : ''}`,
           },
           unit_amount: Math.round(totalAmount * 100),
         },
@@ -106,6 +106,7 @@ export const createEventBooking = async (req: Request, res: Response) => {
         phoneNumber: customerInfo.phoneNumber,
         adultTickets: adultTickets.toString(),
         childTickets: childTickets.toString(),
+        parentTickets: (parentTickets || 0).toString(),
         marketingConsent: customerInfo.marketingConsent.toString(),
         couponCode: appliedCouponCode,
         discountPercentage: discountPercentage.toString(),
@@ -172,9 +173,29 @@ export const validateEventCoupon = async (req: Request, res: Response) => {
   }
 };
 
+export const getBookingConsent = async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+
+    const { data: booking, error } = await supabase
+      .from('event_bookings')
+      .select('marketing_consent')
+      .eq('stripe_session_id', sessionId)
+      .single();
+
+    if (error || !booking) {
+      return res.json({ marketingConsent: false });
+    }
+
+    res.json({ marketingConsent: booking.marketing_consent });
+  } catch (error: any) {
+    res.json({ marketingConsent: false });
+  }
+};
+
 export const createFreeEventBooking = async (req: Request, res: Response) => {
   try {
-    const { eventId, customerInfo, adultTickets, childTickets, couponCode } = req.body;
+    const { eventId, customerInfo, adultTickets, childTickets, parentTickets, couponCode } = req.body;
 
     const { data: event, error: eventError } = await supabase
       .from('events')
@@ -195,6 +216,7 @@ export const createFreeEventBooking = async (req: Request, res: Response) => {
         phone_number: customerInfo.phoneNumber,
         adult_tickets: adultTickets,
         child_tickets: childTickets,
+        parent_tickets: parentTickets || 0,
         total_amount: 0,
         payment_status: 'paid',
         stripe_session_id: `free_${Date.now()}`,
@@ -227,34 +249,45 @@ export const createFreeEventBooking = async (req: Request, res: Response) => {
     await supabase
       .from('events')
       .update({
-        total_sold: (currentEvent?.total_sold || 0) + adultTickets + childTickets,
+        total_sold: (currentEvent?.total_sold || 0) + adultTickets + childTickets + (parentTickets || 0),
       })
       .eq('id', eventId);
 
-    const code = generateDiscountCode(currentEvent?.sponsor_name || 'EVENT');
-    const issueDate = new Date();
-    const expiryDate = new Date(issueDate);
-    expiryDate.setDate(expiryDate.getDate() + 30);
+    if (customerInfo.marketingConsent) {
+      const code = generateDiscountCode(currentEvent?.sponsor_name || 'EVENT');
+      const issueDate = new Date();
+      const expiryDate = new Date(issueDate);
+      expiryDate.setDate(expiryDate.getDate() + 30);
 
-    await supabase
-      .from('event_discount_codes')
-      .insert({
-        booking_id: booking.id,
-        user_email: customerInfo.email,
-        code,
-        issue_date: issueDate.toISOString(),
-        expiry_date: expiryDate.toISOString(),
-        month_number: 1,
+      await supabase
+        .from('event_discount_codes')
+        .insert({
+          booking_id: booking.id,
+          user_email: customerInfo.email,
+          code,
+          issue_date: issueDate.toISOString(),
+          expiry_date: expiryDate.toISOString(),
+          month_number: 1,
+        });
+
+      await sendEventConfirmationEmail(customerInfo.email, {
+        firstName: customerInfo.firstName,
+        eventName: currentEvent?.sponsor_name || 'Event',
+        adultTickets,
+        childTickets,
+        totalAmount: 0,
+        discountCode: code,
       });
-
-    await sendEventConfirmationEmail(customerInfo.email, {
-      firstName: customerInfo.firstName,
-      eventName: currentEvent?.sponsor_name || 'Event',
-      adultTickets,
-      childTickets,
-      totalAmount: 0,
-      discountCode: code,
-    });
+    } else {
+      await sendEventConfirmationEmail(customerInfo.email, {
+        firstName: customerInfo.firstName,
+        eventName: currentEvent?.sponsor_name || 'Event',
+        adultTickets,
+        childTickets,
+        totalAmount: 0,
+        discountCode: '',
+      });
+    }
 
     res.json({ success: true, bookingId: booking.id });
   } catch (error: any) {
@@ -284,11 +317,12 @@ export const handleEventWebhook = async (session: any) => {
     const phoneNumber = session.metadata.phoneNumber;
     const adultTickets = parseInt(session.metadata.adultTickets);
     const childTickets = parseInt(session.metadata.childTickets);
+    const parentTickets = parseInt(session.metadata.parentTickets || '0');
     const marketingConsent = session.metadata.marketingConsent === 'true';
     const couponCode = session.metadata.couponCode || '';
     const totalAmount = session.amount_total! / 100;
 
-    console.log('Creating event booking:', { eventId, email, adultTickets, childTickets });
+    console.log('Creating event booking:', { eventId, email, adultTickets, childTickets, parentTickets });
 
     const { data: booking, error: bookingError } = await supabase
       .from('event_bookings')
@@ -299,6 +333,7 @@ export const handleEventWebhook = async (session: any) => {
         phone_number: phoneNumber,
         adult_tickets: adultTickets,
         child_tickets: childTickets,
+        parent_tickets: parentTickets,
         total_amount: totalAmount,
         payment_status: 'paid',
         stripe_session_id: session.id,
@@ -340,47 +375,60 @@ export const handleEventWebhook = async (session: any) => {
     await supabase
       .from('events')
       .update({
-        total_sold: (currentEvent?.total_sold || 0) + adultTickets + childTickets,
+        total_sold: (currentEvent?.total_sold || 0) + adultTickets + childTickets + parentTickets,
       })
       .eq('id', eventId);
 
     console.log('Ticket counts updated');
 
-    const code = generateDiscountCode(currentEvent?.sponsor_name || 'EVENT');
-    const issueDate = new Date();
-    const expiryDate = new Date(issueDate);
-    expiryDate.setDate(expiryDate.getDate() + 30);
+    if (marketingConsent) {
+      const code = generateDiscountCode(currentEvent?.sponsor_name || 'EVENT');
+      const issueDate = new Date();
+      const expiryDate = new Date(issueDate);
+      expiryDate.setDate(expiryDate.getDate() + 30);
 
-    console.log('Generated discount code:', code);
+      console.log('Generated discount code:', code);
 
-    const { error: codeError } = await supabase
-      .from('event_discount_codes')
-      .insert({
-        booking_id: booking.id,
-        user_email: email,
-        code,
-        issue_date: issueDate.toISOString(),
-        expiry_date: expiryDate.toISOString(),
-        month_number: 1,
+      const { error: codeError } = await supabase
+        .from('event_discount_codes')
+        .insert({
+          booking_id: booking.id,
+          user_email: email,
+          code,
+          issue_date: issueDate.toISOString(),
+          expiry_date: expiryDate.toISOString(),
+          month_number: 1,
+        });
+
+      if (codeError) {
+        console.error('Discount code creation error:', codeError);
+        throw codeError;
+      }
+
+      console.log('Discount code saved to database');
+
+      await sendEventConfirmationEmail(email, {
+        firstName,
+        eventName: currentEvent?.sponsor_name || 'Event',
+        adultTickets,
+        childTickets,
+        totalAmount,
+        discountCode: code,
       });
 
-    if (codeError) {
-      console.error('Discount code creation error:', codeError);
-      throw codeError;
+      console.log(`Event booking complete: ${booking.id}, Code sent: ${code}`);
+    } else {
+      await sendEventConfirmationEmail(email, {
+        firstName,
+        eventName: currentEvent?.sponsor_name || 'Event',
+        adultTickets,
+        childTickets,
+        totalAmount,
+        discountCode: '',
+      });
+
+      console.log(`Event booking complete: ${booking.id}, No discount code (no consent)`);
     }
-
-    console.log('Discount code saved to database');
-
-    await sendEventConfirmationEmail(email, {
-      firstName,
-      eventName: currentEvent?.sponsor_name || 'Event',
-      adultTickets,
-      childTickets,
-      totalAmount,
-      discountCode: code,
-    });
-
-    console.log(`Event booking complete: ${booking.id}, Code sent: ${code}`);
     console.log('=== EVENT WEBHOOK END ===');
   } catch (error) {
     console.error('=== EVENT WEBHOOK ERROR ===');

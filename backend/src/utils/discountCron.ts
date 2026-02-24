@@ -19,8 +19,9 @@ export const startDiscountCodeCron = () => {
 
       const { data: bookings, error } = await supabase
         .from('event_bookings')
-        .select('id, user_email, first_name, booking_date, event_id')
-        .eq('payment_status', 'paid');
+        .select('id, user_email, first_name, booking_date, event_id, marketing_consent')
+        .eq('payment_status', 'paid')
+        .eq('marketing_consent', true);
 
       if (error) throw error;
 

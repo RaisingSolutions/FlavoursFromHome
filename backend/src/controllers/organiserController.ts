@@ -64,9 +64,11 @@ export const getOrganiserDashboard = async (req: Request, res: Response) => {
 
     if (bookingsError) throw bookingsError;
 
-    const totalAdultTickets = event.adult_sold;
-    const totalChildTickets = event.child_sold;
+    const totalTicketsSold = event.total_sold;
     const totalRevenue = bookings?.reduce((sum, b) => sum + parseFloat(b.total_amount), 0) || 0;
+
+    const adultTickets = bookings?.reduce((sum, b) => sum + b.adult_tickets, 0) || 0;
+    const childTickets = bookings?.reduce((sum, b) => sum + b.child_tickets, 0) || 0;
 
     res.json({
       event: {
@@ -75,19 +77,19 @@ export const getOrganiserDashboard = async (req: Request, res: Response) => {
         location: event.location,
       },
       capacity: {
-        adult: event.adult_capacity,
-        child: event.child_capacity,
-        total: event.adult_capacity + event.child_capacity,
+        adult: 0,
+        child: 0,
+        total: event.total_capacity,
       },
       sold: {
-        adult: totalAdultTickets,
-        child: totalChildTickets,
-        total: totalAdultTickets + totalChildTickets,
+        adult: adultTickets,
+        child: childTickets,
+        total: totalTicketsSold,
       },
       remaining: {
-        adult: event.adult_capacity - totalAdultTickets,
-        child: event.child_capacity - totalChildTickets,
-        total: (event.adult_capacity + event.child_capacity) - (totalAdultTickets + totalChildTickets),
+        adult: 0,
+        child: 0,
+        total: event.total_capacity - totalTicketsSold,
       },
       revenue: totalRevenue,
       bookings: bookings?.length || 0,

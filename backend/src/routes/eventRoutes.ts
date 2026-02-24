@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.get('/', eventController.getEvents);
 router.get('/:id', eventController.getEventById);
+router.get('/booking-consent/:sessionId', eventController.getBookingConsent);
 router.post('/:id/book', eventController.createEventBooking);
 router.post('/:id/book-free', eventController.createFreeEventBooking);
 router.post('/discount/validate', eventController.validateEventDiscount);

@@ -14,11 +14,13 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
   const [phoneNumber, setPhoneNumber] = useState('')
   const [adultTickets, setAdultTickets] = useState(0)
   const [childTickets, setChildTickets] = useState(0)
+  const [parentTickets, setParentTickets] = useState(0)
   const [couponCode, setCouponCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percentage: number } | null>(null)
   const [verifyingCoupon, setVerifyingCoupon] = useState(false)
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   useEffect(() => {
     fetchEvent()
@@ -68,7 +70,7 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const totalTickets = adultTickets + childTickets
+    const totalTickets = adultTickets + childTickets + parentTickets
     const remaining = event.total_capacity - event.total_sold
 
     if (totalTickets === 0) {
@@ -82,11 +84,16 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
     }
 
     if (!marketingConsent) {
-      onShowToast('Please agree to receive your monthly discount codes', 'error')
+      setShowConfirmDialog(true)
       return
     }
 
+    proceedToPayment()
+  }
+
+  const proceedToPayment = async () => {
     setIsSubmitting(true)
+    setShowConfirmDialog(false)
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/events/${eventId}/book`, {
@@ -97,6 +104,7 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
           customerInfo: { firstName, email, phoneNumber, marketingConsent },
           adultTickets,
           childTickets,
+          parentTickets,
           couponCode: appliedCoupon?.code
         })
       })
@@ -177,7 +185,10 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
               <input
                 type="text"
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^a-zA-Z\s]/g, '')
+                  setFirstName(value)
+                }}
                 required
               />
             </div>
@@ -197,7 +208,10 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
               <input
                 type="tel"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9+\s()-]/g, '')
+                  setPhoneNumber(value)
+                }}
                 required
               />
             </div>
@@ -268,6 +282,43 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
                   <button
                     type="button"
                     onClick={() => setChildTickets(childTickets + 1)}
+                    style={{ padding: '5px 15px', fontSize: '18px' }}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '15px',
+                background: '#e8f5e9',
+                borderRadius: '8px',
+                border: '2px dashed #4caf50',
+                marginBottom: '15px'
+              }}>
+                <div>
+                  <div style={{ fontWeight: 'bold', color: '#2e7d32' }}>Visiting Parents</div>
+                  <div style={{ fontSize: '14px', color: '#666' }}>
+                    FREE
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setParentTickets(Math.max(0, parentTickets - 1))}
+                    style={{ padding: '5px 15px', fontSize: '18px' }}
+                  >
+                    -
+                  </button>
+                  <span style={{ fontSize: '18px', fontWeight: 'bold', minWidth: '30px', textAlign: 'center' }}>
+                    {parentTickets}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setParentTickets(parentTickets + 1)}
                     style={{ padding: '5px 15px', fontSize: '18px' }}
                   >
                     +
@@ -363,7 +414,7 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
                   style={{ marginTop: '4px' }}
                 />
                 <span style={{ fontSize: '14px', lineHeight: '1.5' }}>
-                  I agree to receive monthly discount codes via email for 12 months *
+                  I agree to receive Flavours From Home monthly discount codes via email till the end of 2026
                 </span>
               </label>
             </div>
@@ -390,6 +441,68 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
           </form>
         </div>
       </div>
+
+      {showConfirmDialog && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '12px',
+            maxWidth: '500px',
+            textAlign: 'center'
+          }}>
+            <h2 style={{ marginTop: 0, color: '#dc3545' }}>⚠️ Miss Out on 10% Discount?</h2>
+            <p style={{ fontSize: '16px', lineHeight: '1.6', margin: '20px 0' }}>
+              Are you sure you want to miss out on <strong>10% OFF every month until end of 2026</strong>?
+              <br/><br/>
+              You won't receive any monthly discount codes if you proceed without consent.
+            </p>
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                style={{
+                  padding: '12px 30px',
+                  background: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Go Back
+              </button>
+              <button
+                onClick={proceedToPayment}
+                style={{
+                  padding: '12px 30px',
+                  background: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Yes, Proceed Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
