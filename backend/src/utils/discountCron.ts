@@ -9,6 +9,14 @@ export const startDiscountCodeCron = () => {
     console.log('Running monthly discount code generation...');
     
     try {
+      const endDate = new Date('2026-12-31T23:59:59');
+      const now = new Date();
+
+      if (now > endDate) {
+        console.log('Program ended - past Dec 31, 2026');
+        return;
+      }
+
       const { data: bookings, error } = await supabase
         .from('event_bookings')
         .select('id, user_email, first_name, booking_date, event_id')
@@ -17,12 +25,6 @@ export const startDiscountCodeCron = () => {
       if (error) throw error;
 
       for (const booking of bookings || []) {
-        const bookingDate = new Date(booking.booking_date);
-        const now = new Date();
-        const monthsSinceBooking = Math.floor((now.getTime() - bookingDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
-
-        if (monthsSinceBooking >= 12) continue; // Program ended
-
         const { data: existingCodes, error: codesError } = await supabase
           .from('event_discount_codes')
           .select('month_number, issue_date')
@@ -33,8 +35,6 @@ export const startDiscountCodeCron = () => {
 
         const lastMonthIssued = existingCodes?.[0]?.month_number || 0;
         const nextMonth = lastMonthIssued + 1;
-
-        if (nextMonth > 12) continue;
 
         const daysSinceLastCode = existingCodes?.[0] 
           ? Math.floor((now.getTime() - new Date(existingCodes[0].issue_date).getTime()) / (1000 * 60 * 60 * 24))

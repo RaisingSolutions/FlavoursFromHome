@@ -14,7 +14,6 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
   const [phoneNumber, setPhoneNumber] = useState('')
   const [adultTickets, setAdultTickets] = useState(0)
   const [childTickets, setChildTickets] = useState(0)
-  const [parentTickets, setParentTickets] = useState(0)
   const [couponCode, setCouponCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percentage: number } | null>(null)
   const [verifyingCoupon, setVerifyingCoupon] = useState(false)
@@ -69,8 +68,16 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (adultTickets === 0 && childTickets === 0 && parentTickets === 0) {
+    const totalTickets = adultTickets + childTickets
+    const remaining = event.total_capacity - event.total_sold
+
+    if (totalTickets === 0) {
       onShowToast('Please select at least one ticket', 'error')
+      return
+    }
+
+    if (totalTickets > remaining) {
+      onShowToast(`Only ${remaining} tickets available`, 'error')
       return
     }
 
@@ -90,7 +97,6 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
           customerInfo: { firstName, email, phoneNumber, marketingConsent },
           adultTickets,
           childTickets,
-          parentTickets,
           couponCode: appliedCoupon?.code
         })
       })
@@ -135,13 +141,9 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
               <span>📅</span>
               <span>{new Date(event.event_date).toLocaleString()}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span>📍</span>
               <span>{event.venue_address}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span>🎗️</span>
-              <span>Sponsored by {event.sponsor_name}</span>
             </div>
           </div>
 
@@ -154,7 +156,7 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
           }}>
             <h3 style={{ margin: '0 0 15px', fontSize: '22px' }}>🎁 Special Offer!</h3>
             <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.6' }}>
-              Book tickets and receive <strong>15% OFF</strong> every month for 12 months on all food orders!
+              Book tickets and receive <strong>10% OFF</strong> every month until end of 2026!
               <br/><br/>
               You'll receive a unique discount code via email each month (max £40 discount per order).
             </p>
@@ -213,7 +215,7 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
                 <div>
                   <div style={{ fontWeight: 'bold' }}>Adult Tickets</div>
                   <div style={{ fontSize: '14px', color: '#666' }}>
-                    £{event.adult_price} each ({event.adultRemaining} available)
+                    £{event.adult_price} each
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -229,9 +231,8 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
                   </span>
                   <button
                     type="button"
-                    onClick={() => setAdultTickets(Math.min(event.adultRemaining, adultTickets + 1))}
+                    onClick={() => setAdultTickets(adultTickets + 1)}
                     style={{ padding: '5px 15px', fontSize: '18px' }}
-                    disabled={adultTickets >= event.adultRemaining}
                   >
                     +
                   </button>
@@ -244,12 +245,13 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
                 alignItems: 'center',
                 padding: '15px',
                 background: 'white',
-                borderRadius: '8px'
+                borderRadius: '8px',
+                marginBottom: '15px'
               }}>
                 <div>
                   <div style={{ fontWeight: 'bold' }}>Child Tickets</div>
                   <div style={{ fontSize: '14px', color: '#666' }}>
-                    £{event.child_price} each ({event.childRemaining} available)
+                    £{event.child_price} each
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -265,9 +267,8 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
                   </span>
                   <button
                     type="button"
-                    onClick={() => setChildTickets(Math.min(event.childRemaining, childTickets + 1))}
+                    onClick={() => setChildTickets(childTickets + 1)}
                     style={{ padding: '5px 15px', fontSize: '18px' }}
-                    disabled={childTickets >= event.childRemaining}
                   >
                     +
                   </button>
@@ -275,39 +276,16 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
               </div>
 
               <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
                 padding: '15px',
-                background: '#e8f5e9',
+                background: '#f0f0f0',
                 borderRadius: '8px',
-                border: '2px dashed #4caf50'
+                textAlign: 'center'
               }}>
-                <div>
-                  <div style={{ fontWeight: 'bold', color: '#2e7d32' }}>Visiting Parents</div>
-                  <div style={{ fontSize: '14px', color: '#666' }}>
-                    FREE ({event.parentRemaining} available)
-                  </div>
+                <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>
+                  Total Capacity: {event.total_capacity}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setParentTickets(Math.max(0, parentTickets - 1))}
-                    style={{ padding: '5px 15px', fontSize: '18px' }}
-                  >
-                    -
-                  </button>
-                  <span style={{ fontSize: '18px', fontWeight: 'bold', minWidth: '30px', textAlign: 'center' }}>
-                    {parentTickets}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setParentTickets(Math.min(event.parentRemaining, parentTickets + 1))}
-                    style={{ padding: '5px 15px', fontSize: '18px' }}
-                    disabled={parentTickets >= event.parentRemaining}
-                  >
-                    +
-                  </button>
+                <div style={{ fontSize: '16px', fontWeight: 'bold', color: event.total_capacity - event.total_sold > 0 ? '#28a745' : '#dc3545' }}>
+                  {event.total_capacity - event.total_sold} tickets remaining
                 </div>
               </div>
             </div>

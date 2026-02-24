@@ -11,10 +11,8 @@ interface Event {
   sponsor_name: string
   adult_price: number
   child_price: number
-  adult_capacity: number
-  child_capacity: number
-  adult_sold: number
-  child_sold: number
+  total_capacity: number
+  total_sold: number
 }
 
 interface SponsoredEventsPageProps {
@@ -57,7 +55,7 @@ export default function SponsoredEventsPage({ onEventClick }: SponsoredEventsPag
         boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)'
       }}>
         <h1 style={{ fontSize: '36px', marginBottom: '15px' }}>🎉 Sponsored Events</h1>
-        <p style={{ fontSize: '20px', margin: 0 }}>Book an event & receive 15% OFF every month for 12 months!</p>
+        <p style={{ fontSize: '20px', margin: 0 }}>Book an event & receive 10% OFF every month until end of 2026!</p>
       </div>
 
       {events.length === 0 ? (
@@ -73,11 +71,8 @@ export default function SponsoredEventsPage({ onEventClick }: SponsoredEventsPag
           padding: '20px 0'
         }}>
           {events.map(event => {
-            const totalSold = event.adult_sold + event.child_sold
-            const totalCapacity = event.adult_capacity + event.child_capacity
-            const percentSold = (totalSold / totalCapacity) * 100
-            const adultRemaining = event.adult_capacity - event.adult_sold
-            const childRemaining = event.child_capacity - event.child_sold
+            const percentSold = (event.total_sold / event.total_capacity) * 100
+            const remaining = event.total_capacity - event.total_sold
 
             return (
               <div
@@ -106,19 +101,6 @@ export default function SponsoredEventsPage({ onEventClick }: SponsoredEventsPag
                     alt={event.name}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
-                  <div style={{
-                    position: 'absolute',
-                    top: '10px',
-                    right: '10px',
-                    background: '#667eea',
-                    color: 'white',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    fontSize: '14px'
-                  }}>
-                    Sponsored by {event.sponsor_name}
-                  </div>
                 </div>
 
                 <div style={{ padding: '20px' }}>
@@ -132,9 +114,13 @@ export default function SponsoredEventsPage({ onEventClick }: SponsoredEventsPag
                       <span>📅</span>
                       <span style={{ fontSize: '14px' }}>{new Date(event.event_date).toLocaleString()}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                       <span>📍</span>
                       <span style={{ fontSize: '14px' }}>{event.venue_address}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>🎗️</span>
+                      <span style={{ fontSize: '14px' }}>Sponsored by {event.sponsor_name}</span>
                     </div>
                   </div>
 
@@ -146,21 +132,15 @@ export default function SponsoredEventsPage({ onEventClick }: SponsoredEventsPag
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <span style={{ fontSize: '14px' }}>Adult: £{event.adult_price}</span>
-                      <span style={{ fontSize: '14px', color: adultRemaining > 0 ? '#28a745' : '#dc3545' }}>
-                        {adultRemaining} left
-                      </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: '14px' }}>Child: £{event.child_price}</span>
-                      <span style={{ fontSize: '14px', color: childRemaining > 0 ? '#28a745' : '#dc3545' }}>
-                        {childRemaining} left
-                      </span>
                     </div>
                   </div>
 
                   <div style={{ marginBottom: '15px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '5px' }}>
-                      <span>{totalSold} / {totalCapacity} tickets sold</span>
+                      <span>{event.total_sold} / {event.total_capacity} tickets sold ({remaining} left)</span>
                       <span>{percentSold.toFixed(0)}%</span>
                     </div>
                     <div style={{

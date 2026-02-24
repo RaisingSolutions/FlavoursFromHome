@@ -341,7 +341,7 @@ export default function CheckoutPage({
             {appliedCoupon && (
               <div style={{ marginTop: '10px', padding: '10px', background: '#d4edda', borderRadius: '4px', color: '#155724' }}>
                 ✓ {appliedCoupon.isEventDiscount ? 'Event discount' : `Coupon "${appliedCoupon.code}"`} applied - £{discount.toFixed(2)} discount
-                {appliedCoupon.isEventDiscount && <div style={{ fontSize: '0.85rem', marginTop: '5px' }}>15% off (max £40)</div>}
+                {appliedCoupon.isEventDiscount && <div style={{ fontSize: '0.85rem', marginTop: '5px' }}>10% off (max £40)</div>}
               </div>
             )}
           </div>

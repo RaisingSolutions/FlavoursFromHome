@@ -32,11 +32,7 @@ export const getEventById = async (req: Request, res: Response) => {
     if (error) throw error;
     if (!event) return res.status(404).json({ error: 'Event not found' });
 
-    const adultRemaining = event.adult_capacity - event.adult_sold;
-    const childRemaining = event.child_capacity - event.child_sold;
-    const parentRemaining = event.parent_capacity - event.parent_sold;
-
-    res.json({ ...event, adultRemaining, childRemaining, parentRemaining });
+    res.json(event);
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to fetch event' });
   }
@@ -44,7 +40,7 @@ export const getEventById = async (req: Request, res: Response) => {
 
 export const createEventBooking = async (req: Request, res: Response) => {
   try {
-    const { eventId, customerInfo, adultTickets, childTickets, parentTickets, couponCode } = req.body;
+    const { eventId, customerInfo, adultTickets, childTickets, couponCode } = req.body;
 
     const { data: event, error: eventError } = await supabase
       .from('events')
@@ -56,11 +52,10 @@ export const createEventBooking = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Event not found' });
     }
 
-    const adultRemaining = event.adult_capacity - event.adult_sold;
-    const childRemaining = event.child_capacity - event.child_sold;
-    const parentRemaining = event.parent_capacity - event.parent_sold;
+    const totalTickets = adultTickets + childTickets;
+    const remaining = event.total_capacity - event.total_sold;
 
-    if (adultTickets > adultRemaining || childTickets > childRemaining || parentTickets > parentRemaining) {
+    if (totalTickets > remaining) {
       return res.status(400).json({ error: 'Not enough tickets available' });
     }
 
@@ -94,7 +89,7 @@ export const createEventBooking = async (req: Request, res: Response) => {
           currency: 'gbp',
           product_data: {
             name: `${event.name} - Tickets`,
-            description: `${adultTickets} Adult, ${childTickets} Child, ${parentTickets} Visiting Parents${appliedCouponCode ? ` (${discountPercentage}% off)` : ''}`,
+            description: `${adultTickets} Adult, ${childTickets} Child${appliedCouponCode ? ` (${discountPercentage}% off)` : ''}`,
           },
           unit_amount: Math.round(totalAmount * 100),
         },
@@ -111,7 +106,6 @@ export const createEventBooking = async (req: Request, res: Response) => {
         phoneNumber: customerInfo.phoneNumber,
         adultTickets: adultTickets.toString(),
         childTickets: childTickets.toString(),
-        parentTickets: parentTickets.toString(),
         marketingConsent: customerInfo.marketingConsent.toString(),
         couponCode: appliedCouponCode,
         discountPercentage: discountPercentage.toString(),
@@ -180,7 +174,7 @@ export const validateEventCoupon = async (req: Request, res: Response) => {
 
 export const createFreeEventBooking = async (req: Request, res: Response) => {
   try {
-    const { eventId, customerInfo, adultTickets, childTickets, parentTickets, couponCode } = req.body;
+    const { eventId, customerInfo, adultTickets, childTickets, couponCode } = req.body;
 
     const { data: event, error: eventError } = await supabase
       .from('events')
@@ -201,7 +195,6 @@ export const createFreeEventBooking = async (req: Request, res: Response) => {
         phone_number: customerInfo.phoneNumber,
         adult_tickets: adultTickets,
         child_tickets: childTickets,
-        parent_tickets: parentTickets,
         total_amount: 0,
         payment_status: 'paid',
         stripe_session_id: `free_${Date.now()}`,
@@ -227,16 +220,14 @@ export const createFreeEventBooking = async (req: Request, res: Response) => {
 
     const { data: currentEvent } = await supabase
       .from('events')
-      .select('adult_sold, child_sold, parent_sold, sponsor_name')
+      .select('total_sold, sponsor_name')
       .eq('id', eventId)
       .single();
 
     await supabase
       .from('events')
       .update({
-        adult_sold: (currentEvent?.adult_sold || 0) + adultTickets,
-        child_sold: (currentEvent?.child_sold || 0) + childTickets,
-        parent_sold: (currentEvent?.parent_sold || 0) + parentTickets,
+        total_sold: (currentEvent?.total_sold || 0) + adultTickets + childTickets,
       })
       .eq('id', eventId);
 
@@ -293,12 +284,11 @@ export const handleEventWebhook = async (session: any) => {
     const phoneNumber = session.metadata.phoneNumber;
     const adultTickets = parseInt(session.metadata.adultTickets);
     const childTickets = parseInt(session.metadata.childTickets);
-    const parentTickets = parseInt(session.metadata.parentTickets || '0');
     const marketingConsent = session.metadata.marketingConsent === 'true';
     const couponCode = session.metadata.couponCode || '';
     const totalAmount = session.amount_total! / 100;
 
-    console.log('Creating event booking:', { eventId, email, adultTickets, childTickets, parentTickets });
+    console.log('Creating event booking:', { eventId, email, adultTickets, childTickets });
 
     const { data: booking, error: bookingError } = await supabase
       .from('event_bookings')
@@ -309,7 +299,6 @@ export const handleEventWebhook = async (session: any) => {
         phone_number: phoneNumber,
         adult_tickets: adultTickets,
         child_tickets: childTickets,
-        parent_tickets: parentTickets,
         total_amount: totalAmount,
         payment_status: 'paid',
         stripe_session_id: session.id,
@@ -342,7 +331,7 @@ export const handleEventWebhook = async (session: any) => {
     // Get current ticket counts and increment
     const { data: currentEvent } = await supabase
       .from('events')
-      .select('adult_sold, child_sold, parent_sold, sponsor_name')
+      .select('total_sold, sponsor_name')
       .eq('id', eventId)
       .single();
 
@@ -351,9 +340,7 @@ export const handleEventWebhook = async (session: any) => {
     await supabase
       .from('events')
       .update({
-        adult_sold: (currentEvent?.adult_sold || 0) + adultTickets,
-        child_sold: (currentEvent?.child_sold || 0) + childTickets,
-        parent_sold: (currentEvent?.parent_sold || 0) + parentTickets,
+        total_sold: (currentEvent?.total_sold || 0) + adultTickets + childTickets,
       })
       .eq('id', eventId);
 

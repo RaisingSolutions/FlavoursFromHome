@@ -46,7 +46,7 @@ export const verifyCoupon = async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Code expired' });
       }
 
-      return res.json({ code: eventDiscount.code, amount: 0, isEventDiscount: true, percentage: 15, maxDiscount: 40 });
+      return res.json({ code: eventDiscount.code, amount: 0, isEventDiscount: true, percentage: 10, maxDiscount: 40 });
     }
 
     // Check test coupons (100% discount, never expire)
@@ -104,7 +104,7 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
             if (item.isFreeRegipallu) return sum;
             return sum + (item.price * item.quantity);
           }, 0);
-          discount = Math.min(subtotal * 0.15, 40); // 15% with £40 cap
+          discount = Math.min(subtotal * 0.10, 40); // 10% with £40 cap
         } else {
           // Check test coupons
           const { data: testCoupon } = await supabase
@@ -135,7 +135,7 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
       price_data: {
         currency: 'gbp',
         product_data: {
-          name: discount > 0 ? `Order Total (${isTestCoupon ? 'TEST 100%' : isEventDiscount ? '15% Event' : discount} discount applied)` : 'Order Total',
+          name: discount > 0 ? `Order Total (${isTestCoupon ? 'TEST 100%' : isEventDiscount ? '10% Event' : discount} discount applied)` : 'Order Total',
         },
         unit_amount: Math.round(finalTotal * 100),
       },
