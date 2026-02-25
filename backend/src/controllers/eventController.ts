@@ -407,25 +407,35 @@ export const handleEventWebhook = async (session: any) => {
 
       console.log('Discount code saved to database');
 
-      await sendEventConfirmationEmail(email, {
-        firstName,
-        eventName: currentEvent?.sponsor_name || 'Event',
-        adultTickets,
-        childTickets,
-        totalAmount,
-        discountCode: code,
-      });
+      try {
+        await sendEventConfirmationEmail(email, {
+          firstName,
+          eventName: currentEvent?.sponsor_name || 'Event',
+          adultTickets,
+          childTickets,
+          totalAmount,
+          discountCode: code,
+        });
+        console.log('Event confirmation email sent successfully to:', email);
+      } catch (emailError) {
+        console.error('Failed to send event confirmation email:', emailError);
+      }
 
       console.log(`Event booking complete: ${booking.id}, Code sent: ${code}`);
     } else {
-      await sendEventConfirmationEmail(email, {
-        firstName,
-        eventName: currentEvent?.sponsor_name || 'Event',
-        adultTickets,
-        childTickets,
-        totalAmount,
-        discountCode: '',
-      });
+      try {
+        await sendEventConfirmationEmail(email, {
+          firstName,
+          eventName: currentEvent?.sponsor_name || 'Event',
+          adultTickets,
+          childTickets,
+          totalAmount,
+          discountCode: '',
+        });
+        console.log('Event confirmation email sent successfully to:', email);
+      } catch (emailError) {
+        console.error('Failed to send event confirmation email:', emailError);
+      }
 
       console.log(`Event booking complete: ${booking.id}, No discount code (no consent)`);
     }

@@ -207,53 +207,52 @@ export const sendEventConfirmationEmail = async (
     discountCode: string;
   }
 ) => {
-  try {
-    const { firstName, eventName, adultTickets, childTickets, totalAmount, discountCode } = details;
-    
-    await transporter.sendMail({
-      from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
-      to: to,
-      subject: discountCode 
-        ? `Event Booking Confirmed + Your Monthly 10% Discount! - Flavours From Home`
-        : `Event Booking Confirmed - Flavours From Home`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #2c5f2d;">🎉 Booking Confirmed!</h1>
-          <p>Hi ${firstName},</p>
-          <p>Your tickets for <strong>${eventName}</strong> have been confirmed!</p>
-          
-          <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3>Booking Details</h3>
-            <p><strong>Adult Tickets:</strong> ${adultTickets}</p>
-            <p><strong>Child Tickets:</strong> ${childTickets}</p>
-            <p><strong>Total Paid:</strong> £${totalAmount.toFixed(2)}</p>
-          </div>
-
-          ${discountCode ? `
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; margin: 30px 0; text-align: center; color: white;">
-            <h2 style="margin: 0 0 15px 0; font-size: 24px;">🎁 Your Monthly 10% Discount!</h2>
-            <p style="font-size: 16px; margin: 0 0 20px 0;">As a thank you, enjoy 10% OFF every month until end of 2026!</p>
-            <div style="background: white; padding: 20px; border-radius: 8px; font-size: 28px; font-weight: bold; letter-spacing: 2px; color: #667eea; margin: 20px 0;">
-              ${discountCode}
-            </div>
-            <p style="font-size: 14px; margin: 0;">Valid for 30 days | Max £40 discount per order</p>
-          </div>
-
-          <p>You'll receive a new discount code every month until the end of 2026. Use it on any order!</p>
-          ` : ''}
-          
-          <p style="margin-top: 30px;">
-            Best regards,<br>
-            <strong>Flavours From Home Team</strong>
-          </p>
+  const { firstName, eventName, adultTickets, childTickets, totalAmount, discountCode } = details;
+  
+  console.log('Attempting to send event confirmation email to:', to);
+  console.log('Email config:', { user: process.env.EMAIL_USER, hasPassword: !!process.env.EMAIL_PASSWORD });
+  
+  const info = await transporter.sendMail({
+    from: '"Flavours From Home" <admin@flavours-from-home.co.uk>',
+    to: to,
+    subject: discountCode 
+      ? `Event Booking Confirmed + Your Monthly 10% Discount! - Flavours From Home`
+      : `Event Booking Confirmed - Flavours From Home`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #2c5f2d;">🎉 Booking Confirmed!</h1>
+        <p>Hi ${firstName},</p>
+        <p>Your tickets for <strong>${eventName}</strong> have been confirmed!</p>
+        
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3>Booking Details</h3>
+          <p><strong>Adult Tickets:</strong> ${adultTickets}</p>
+          <p><strong>Child Tickets:</strong> ${childTickets}</p>
+          <p><strong>Total Paid:</strong> £${totalAmount.toFixed(2)}</p>
         </div>
-      `,
-    });
-    
-    console.log('Event confirmation email sent to:', to);
-  } catch (error) {
-    console.error('Email send error:', error);
-  }
+
+        ${discountCode ? `
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; margin: 30px 0; text-align: center; color: white;">
+          <h2 style="margin: 0 0 15px 0; font-size: 24px;">🎁 Your Monthly 10% Discount!</h2>
+          <p style="font-size: 16px; margin: 0 0 20px 0;">As a thank you, enjoy 10% OFF every month until end of 2026!</p>
+          <div style="background: white; padding: 20px; border-radius: 8px; font-size: 28px; font-weight: bold; letter-spacing: 2px; color: #667eea; margin: 20px 0;">
+            ${discountCode}
+          </div>
+          <p style="font-size: 14px; margin: 0;">Valid for 30 days | Max £40 discount per order</p>
+        </div>
+
+        <p>You'll receive a new discount code every month until the end of 2026. Use it on any order!</p>
+        ` : ''}
+        
+        <p style="margin-top: 30px;">
+          Best regards,<br>
+          <strong>Flavours From Home Team</strong>
+        </p>
+      </div>
+    `,
+  });
+  
+  console.log('Event confirmation email sent successfully:', info.messageId);
 };
 
 export const sendMonthlyDiscountCode = async (

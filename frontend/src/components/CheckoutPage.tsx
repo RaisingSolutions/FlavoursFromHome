@@ -143,6 +143,12 @@ export default function CheckoutPage({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    const digits = phoneNumber.replace(/\D/g, '')
+    if (digits.length < 10 || digits.length > 11) {
+      onShowToast('Please enter a valid UK phone number (10-11 digits)', 'error')
+      return
+    }
+    
     if (orderType === 'delivery' && !isDeliveryMinimumMet) {
       onShowToast('Delivery orders must be over £20. Please add more items or choose collection.', 'error')
       return

@@ -26,6 +26,16 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
     fetchEvent()
   }, [eventId])
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        setIsSubmitting(false)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
+
   const fetchEvent = async () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/events/${eventId}`)
@@ -70,11 +80,22 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    const digits = phoneNumber.replace(/\D/g, '')
+    if (digits.length < 10 || digits.length > 11) {
+      onShowToast('Please enter a valid UK phone number (10-11 digits)', 'error')
+      return
+    }
+
     const totalTickets = adultTickets + childTickets + parentTickets
     const remaining = event.total_capacity - event.total_sold
 
     if (totalTickets === 0) {
       onShowToast('Please select at least one ticket', 'error')
+      return
+    }
+
+    if (childTickets > 0 && adultTickets === 0 && parentTickets === 0) {
+      onShowToast('Child tickets require at least one adult or visiting parent ticket', 'error')
       return
     }
 
@@ -154,21 +175,6 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
               <span>{event.venue_address}</span>
             </div>
           </div>
-
-          <div style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            padding: '30px',
-            borderRadius: '12px',
-            marginTop: '30px',
-            color: 'white'
-          }}>
-            <h3 style={{ margin: '0 0 15px', fontSize: '22px' }}>🎁 Special Offer!</h3>
-            <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.6' }}>
-              Book tickets and receive <strong>10% OFF</strong> every month until end of 2026!
-              <br/><br/>
-              You'll receive a unique discount code via email each month (max £40 discount per order).
-            </p>
-          </div>
         </div>
 
         <div>
@@ -179,6 +185,20 @@ export default function EventDetailsPage({ eventId, onBack, onShowToast }: Event
             border: '2px solid #e0e0e0'
           }}>
             <h2 style={{ marginTop: 0 }}>Book Tickets</h2>
+
+            <div style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              padding: '20px',
+              borderRadius: '8px',
+              marginBottom: '20px',
+              color: 'white',
+              textAlign: 'center'
+            }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: '18px' }}>🎁 Special Offer!</h3>
+              <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
+                Book tickets and receive <strong>10% OFF</strong> every month until end of 2026!
+              </p>
+            </div>
 
             <div className="form-group">
               <label>First Name *</label>
