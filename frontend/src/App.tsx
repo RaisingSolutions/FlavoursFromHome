@@ -6,7 +6,6 @@ import CartPage from './components/CartPage'
 import CheckoutPage from './components/CheckoutPage'
 import SuccessPage from './components/SuccessPage'
 import FeedbackPage from './components/FeedbackPage'
-import OurStoryPage from './components/OurStoryPage'
 import SponsoredEventsPage from './components/SponsoredEventsPage'
 import EventDetailsPage from './components/EventDetailsPage'
 import EventSuccessPage from './components/EventSuccessPage'
@@ -52,11 +51,10 @@ function App() {
     return []
   })
   const [cartCount, setCartCount] = useState(0)
-  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout' | 'success' | 'feedback' | 'story' | 'events' | 'event-details' | 'event-success' | 'organiser-login' | 'organiser-dashboard'>(() => {
+  const [currentPage, setCurrentPage] = useState<'home' | 'cart' | 'checkout' | 'success' | 'feedback' | 'events' | 'event-details' | 'event-success' | 'organiser-login' | 'organiser-dashboard'>(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('order')) return 'feedback'
     if (params.get('success') === 'true') return 'success'
-    if (params.get('page') === 'story') return 'story'
     if (params.get('page') === 'events') return 'events'
     if (params.get('page') === 'organiser') return 'organiser-login'
     if (window.location.pathname.includes('/events/success')) return 'event-success'
@@ -75,8 +73,6 @@ function App() {
       setCurrentPage('feedback')
     } else if (params.get('success') === 'true') {
       setCurrentPage('success')
-    } else if (params.get('page') === 'story') {
-      setCurrentPage('story')
     } else if (params.get('page') === 'events') {
       setCurrentPage('events')
     } else if (params.get('page') === 'organiser') {
@@ -90,11 +86,9 @@ function App() {
     }
   }, [])
 
-  const navigateToPage = (page: 'home' | 'cart' | 'story' | 'events' | 'organiser-login') => {
+  const navigateToPage = (page: 'home' | 'cart' | 'events' | 'organiser-login') => {
     setCurrentPage(page)
-    if (page === 'story') {
-      window.history.pushState({}, '', '?page=story')
-    } else if (page === 'events') {
+    if (page === 'events') {
       window.history.pushState({}, '', '?page=events')
     } else if (page === 'organiser-login') {
       window.history.pushState({}, '', '?page=organiser')
@@ -224,9 +218,6 @@ function App() {
               Flavours From Home
             </div>
             <div className="navbar-actions">
-              <button className="cart-btn" onClick={() => navigateToPage('story')} style={{ marginRight: '10px' }}>
-                Our Story
-              </button>
               <button className="cart-btn" onClick={() => navigateToPage('events')} style={{ marginRight: '10px' }}>
                 Sponsored Events
               </button>
@@ -269,8 +260,6 @@ function App() {
               onCheckout={() => setCurrentPage('checkout')}
               onShowToast={(message, type) => setToast({ message, type })}
             />
-          ) : currentPage === 'story' ? (
-            <OurStoryPage />
           ) : currentPage === 'events' ? (
             <SponsoredEventsPage 
               onEventClick={(eventId) => {
