@@ -50,7 +50,8 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
     setEditingShift(shift.id);
     setEditData({
       start_time: new Date(shift.start_time).toISOString().slice(0, 16),
-      end_time: new Date(shift.end_time).toISOString().slice(0, 16)
+      end_time: new Date(shift.end_time).toISOString().slice(0, 16),
+      notes: shift.notes || ''
     });
   };
 
@@ -186,6 +187,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                           <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>Start</th>
                           <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>End</th>
                           <th style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd' }}>Hours</th>
+                          <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd' }}>Notes</th>
                           <th style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd' }}>Status</th>
                           <th style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd' }}>Actions</th>
                         </tr>
@@ -213,6 +215,14 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                                 ) : new Date(shift.end_time).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                               </td>
                               <td style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'center', fontWeight: 'bold' }}>{hours}h</td>
+                              <td style={{ padding: '8px', border: '1px solid #ddd', fontSize: '12px', color: '#666' }}>
+                                {isEditing ? (
+                                  <input type="text" value={editData.notes || ''} 
+                                    onChange={(e) => setEditData({...editData, notes: e.target.value})}
+                                    placeholder="Notes..."
+                                    style={{ width: '100%', padding: '2px', fontSize: '11px' }} />
+                                ) : (shift.notes || '-')}
+                              </td>
                               <td style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'center' }}>
                                 <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '12px', background: shift.approved ? '#d4edda' : '#fff3cd', color: shift.approved ? '#155724' : '#856404' }}>
                                   {shift.approved ? 'Approved' : 'Pending'}

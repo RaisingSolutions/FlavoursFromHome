@@ -10,7 +10,7 @@ const getWeekStart = (date: Date) => {
 
 export const createShift = async (req: Request, res: Response) => {
   try {
-    const { user_id, start_time, end_time, is_admin } = req.body;
+    const { user_id, start_time, end_time, is_admin, notes } = req.body;
     const shiftStart = new Date(start_time);
     const now = new Date();
     const hoursSinceShift = (now.getTime() - shiftStart.getTime()) / (1000 * 60 * 60);
@@ -23,7 +23,7 @@ export const createShift = async (req: Request, res: Response) => {
 
     const { data, error } = await supabase
       .from('halfway_shifts')
-      .insert({ user_id, start_time, end_time, week_start: weekStart.toISOString().split('T')[0] })
+      .insert({ user_id, start_time, end_time, week_start: weekStart.toISOString().split('T')[0], notes })
       .select()
       .single();
 
@@ -37,7 +37,7 @@ export const createShift = async (req: Request, res: Response) => {
 export const updateShift = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { start_time, end_time, is_admin, user_id } = req.body;
+    const { start_time, end_time, is_admin, user_id, notes } = req.body;
     const now = new Date();
     const monday = getWeekStart(now);
     monday.setDate(monday.getDate() + 7);
@@ -52,7 +52,7 @@ export const updateShift = async (req: Request, res: Response) => {
     const weekStart = getWeekStart(new Date(start_time));
     const { data, error } = await supabase
       .from('halfway_shifts')
-      .update({ start_time, end_time, week_start: weekStart.toISOString().split('T')[0] })
+      .update({ start_time, end_time, week_start: weekStart.toISOString().split('T')[0], notes })
       .eq('id', id)
       .select()
       .single();
