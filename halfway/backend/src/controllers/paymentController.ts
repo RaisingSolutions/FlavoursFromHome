@@ -1,27 +1,23 @@
 import { Request, Response } from 'express';
 import { supabase } from '../utils/supabase';
 
-export const createPayment = async (req: Request, res: Response) => {
+export const savePayment = async (req: Request, res: Response) => {
   try {
     const { user_id, month, amount, account, comments, paid } = req.body;
 
     const { data, error } = await supabase
       .from('halfway_payments')
-      .insert({
-        user_id,
-        month,
-        amount: parseFloat(amount) || 0,
-        account,
-        comments,
-        paid
-      })
+      .upsert(
+        { user_id, month, amount: parseFloat(amount) || 0, account, comments, paid, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id,month' }
+      )
       .select()
       .single();
 
     if (error) throw error;
-    res.status(201).json(data);
+    res.json(data);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create payment' });
+    res.status(500).json({ error: 'Failed to save payment' });
   }
 };
 
@@ -31,13 +27,7 @@ export const getPayments = async (req: Request, res: Response) => {
 
     let query = supabase
       .from('halfway_payments')
-      .select(`
-        *,
-        halfway_users (
-          id,
-          name
-        )
-      `);
+      .select(`*, halfway_users(id, name)`);
 
     if (month) {
       query = query.eq('month', month);

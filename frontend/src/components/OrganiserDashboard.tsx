@@ -172,7 +172,7 @@ export default function OrganiserDashboard({ token, eventId, onLogout, onShowToa
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '30px' }}>
           <div>
             <h3>Adult Tickets Sold</h3>
             <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#667eea' }}>
@@ -184,6 +184,13 @@ export default function OrganiserDashboard({ token, eventId, onLogout, onShowToa
             <h3>Child Tickets Sold</h3>
             <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#764ba2' }}>
               {dashboard.sold.child}
+            </div>
+          </div>
+
+          <div>
+            <h3>Visiting Parents</h3>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#4caf50' }}>
+              {dashboard.sold.parent || 0}
             </div>
           </div>
         </div>

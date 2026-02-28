@@ -1,13 +1,29 @@
 import { Request, Response } from 'express';
 import { supabase } from '../utils/supabase';
 
+const getWeekStart = (date: Date) => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff));
+};
+
 export const createShift = async (req: Request, res: Response) => {
   try {
-    const { user_id, start_time, end_time } = req.body;
+    const { user_id, start_time, end_time, is_admin } = req.body;
+    const shiftStart = new Date(start_time);
+    const now = new Date();
+    const hoursSinceShift = (now.getTime() - shiftStart.getTime()) / (1000 * 60 * 60);
+
+    if (!is_admin && hoursSinceShift > 24) {
+      return res.status(400).json({ error: 'Shifts must be logged within 24 hours' });
+    }
+
+    const weekStart = getWeekStart(shiftStart);
 
     const { data, error } = await supabase
       .from('halfway_shifts')
-      .insert({ user_id, start_time, end_time })
+      .insert({ user_id, start_time, end_time, week_start: weekStart.toISOString().split('T')[0] })
       .select()
       .single();
 
@@ -18,73 +34,76 @@ export const createShift = async (req: Request, res: Response) => {
   }
 };
 
-export const getShifts = async (req: Request, res: Response) => {
+export const updateShift = async (req: Request, res: Response) => {
   try {
-    const { period, month } = req.query;
-    
+    const { id } = req.params;
+    const { start_time, end_time, is_admin, user_id } = req.body;
     const now = new Date();
-    let startDate: Date;
-    let endDate: Date | undefined;
+    const monday = getWeekStart(now);
+    monday.setDate(monday.getDate() + 7);
 
-    if (period === 'week') {
-      startDate = new Date(now.setDate(now.getDate() - now.getDay()));
-    } else if (period === 'month' && month) {
-      const [year, monthNum] = (month as string).split('-');
-      startDate = new Date(parseInt(year), parseInt(monthNum) - 1, 1);
-      endDate = new Date(parseInt(year), parseInt(monthNum), 0, 23, 59, 59);
-    } else {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    }
-
-    let query = supabase
-      .from('halfway_shifts')
-      .select(`
-        *,
-        halfway_users (
-          id,
-          name,
-          username
-        )
-      `)
-      .gte('start_time', startDate.toISOString());
+    const { data: shift } = await supabase.from('halfway_shifts').select('*, week_start, approved').eq('id', id).single();
     
-    if (endDate) {
-      query = query.lte('start_time', endDate.toISOString());
-    }
-    
-    const { data, error } = await query.order('start_time', { ascending: false });
+    if (!shift) return res.status(404).json({ error: 'Shift not found' });
+    if (shift.approved && !is_admin) return res.status(403).json({ error: 'Cannot edit approved shift' });
+    if (!is_admin && shift.user_id !== user_id) return res.status(403).json({ error: 'Cannot edit other user shifts' });
+    if (!is_admin && now > monday) return res.status(403).json({ error: 'Edit deadline passed (Monday)' });
 
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch shifts' });
-  }
-};
-
-export const getUserShifts = async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-
+    const weekStart = getWeekStart(new Date(start_time));
     const { data, error } = await supabase
       .from('halfway_shifts')
-      .select('*')
-      .eq('user_id', userId)
-      .order('start_time', { ascending: false });
+      .update({ start_time, end_time, week_start: weekStart.toISOString().split('T')[0] })
+      .eq('id', id)
+      .select()
+      .single();
 
     if (error) throw error;
     res.json(data);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch user shifts' });
+    res.status(500).json({ error: 'Failed to update shift' });
   }
 };
 
-export const getMonthlyHours = async (req: Request, res: Response) => {
+export const deleteShift = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { is_admin, user_id } = req.body;
+
+    const { data: shift } = await supabase.from('halfway_shifts').select('*').eq('id', id).single();
+    if (!shift) return res.status(404).json({ error: 'Shift not found' });
+    if (shift.approved && !is_admin) return res.status(403).json({ error: 'Cannot delete approved shift' });
+    if (!is_admin && shift.user_id !== user_id) return res.status(403).json({ error: 'Cannot delete other user shifts' });
+
+    const { error } = await supabase.from('halfway_shifts').delete().eq('id', id);
+    if (error) throw error;
+    res.json({ message: 'Shift deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete shift' });
+  }
+};
+
+export const approveWeek = async (req: Request, res: Response) => {
+  try {
+    const { week_start, admin_id } = req.body;
+
+    const { error } = await supabase
+      .from('halfway_shifts')
+      .update({ approved: true, approved_at: new Date().toISOString(), approved_by: admin_id })
+      .eq('week_start', week_start)
+      .eq('approved', false);
+
+    if (error) throw error;
+    res.json({ message: 'Week approved' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to approve week' });
+  }
+};
+
+export const getShifts = async (req: Request, res: Response) => {
   try {
     const { month } = req.query;
     
-    if (!month) {
-      return res.status(400).json({ error: 'Month parameter required' });
-    }
+    if (!month) return res.status(400).json({ error: 'Month required' });
 
     const [year, monthNum] = (month as string).split('-');
     const startDate = new Date(parseInt(year), parseInt(monthNum) - 1, 1);
@@ -92,38 +111,35 @@ export const getMonthlyHours = async (req: Request, res: Response) => {
 
     const { data, error } = await supabase
       .from('halfway_shifts')
-      .select(`
-        user_id,
-        start_time,
-        end_time,
-        halfway_users (
-          id,
-          name
-        )
-      `)
+      .select(`*, halfway_users!halfway_shifts_user_id_fkey(id, name)`)
       .gte('start_time', startDate.toISOString())
-      .lte('start_time', endDate.toISOString());
+      .lte('start_time', endDate.toISOString())
+      .order('start_time', { ascending: true });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+    res.json(data);
+  } catch (error) {
+    console.error('getShifts error:', error);
+    res.status(500).json({ error: 'Failed to fetch shifts' });
+  }
+};
+
+export const getWeeklyShifts = async (req: Request, res: Response) => {
+  try {
+    const { week_start } = req.query;
+    
+    const { data, error } = await supabase
+      .from('halfway_shifts')
+      .select(`*, halfway_users!halfway_shifts_user_id_fkey(id, name)`)
+      .eq('week_start', week_start)
+      .order('start_time', { ascending: true });
 
     if (error) throw error;
-
-    // Calculate total hours per user
-    const userHoursMap: any = {};
-    data.forEach((shift: any) => {
-      const userId = shift.user_id;
-      const hours = (new Date(shift.end_time).getTime() - new Date(shift.start_time).getTime()) / (1000 * 60 * 60);
-      
-      if (!userHoursMap[userId]) {
-        userHoursMap[userId] = {
-          user_id: userId,
-          name: shift.halfway_users.name,
-          total_hours: 0
-        };
-      }
-      userHoursMap[userId].total_hours += hours;
-    });
-
-    res.json(Object.values(userHoursMap));
+    res.json(data);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch monthly hours' });
+    res.status(500).json({ error: 'Failed to fetch shifts' });
   }
 };
