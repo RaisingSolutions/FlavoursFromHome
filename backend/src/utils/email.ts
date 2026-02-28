@@ -222,12 +222,13 @@ export const sendEventConfirmationEmail = async (
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #2c5f2d;">🎉 Booking Confirmed!</h1>
         <p>Hi ${firstName},</p>
-        <p>Your tickets for <strong>${eventName}</strong> have been confirmed!</p>
+        <p>Your tickets for <strong>${eventName}</strong> Ugadi 2026 have been confirmed!</p>
         
         <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3>Booking Details</h3>
           <p><strong>Adult Tickets:</strong> ${adultTickets}</p>
           <p><strong>Child Tickets:</strong> ${childTickets}</p>
+          <p><strong>Total Tickets:</strong> ${adultTickets + childTickets}</p>
           <p><strong>Total Paid:</strong> £${totalAmount.toFixed(2)}</p>
         </div>
 

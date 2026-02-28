@@ -275,6 +275,7 @@ export const createFreeEventBooking = async (req: Request, res: Response) => {
         eventName: currentEvent?.sponsor_name || 'Event',
         adultTickets,
         childTickets,
+        parentTickets: parentTickets || 0,
         totalAmount: 0,
         discountCode: code,
       });
@@ -284,6 +285,7 @@ export const createFreeEventBooking = async (req: Request, res: Response) => {
         eventName: currentEvent?.sponsor_name || 'Event',
         adultTickets,
         childTickets,
+        parentTickets: parentTickets || 0,
         totalAmount: 0,
         discountCode: '',
       });
@@ -413,6 +415,7 @@ export const handleEventWebhook = async (session: any) => {
           eventName: currentEvent?.sponsor_name || 'Event',
           adultTickets,
           childTickets,
+          parentTickets,
           totalAmount,
           discountCode: code,
         });
@@ -429,6 +432,7 @@ export const handleEventWebhook = async (session: any) => {
           eventName: currentEvent?.sponsor_name || 'Event',
           adultTickets,
           childTickets,
+          parentTickets,
           totalAmount,
           discountCode: '',
         });
