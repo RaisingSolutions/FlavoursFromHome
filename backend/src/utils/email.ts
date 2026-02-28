@@ -203,11 +203,12 @@ export const sendEventConfirmationEmail = async (
     eventName: string;
     adultTickets: number;
     childTickets: number;
+    parentTickets?: number;
     totalAmount: number;
     discountCode: string;
   }
 ) => {
-  const { firstName, eventName, adultTickets, childTickets, totalAmount, discountCode } = details;
+  const { firstName, eventName, adultTickets, childTickets, parentTickets, totalAmount, discountCode } = details;
   
   console.log('Attempting to send event confirmation email to:', to);
   console.log('Email config:', { user: process.env.EMAIL_USER, hasPassword: !!process.env.EMAIL_PASSWORD });
@@ -228,7 +229,7 @@ export const sendEventConfirmationEmail = async (
           <h3>Booking Details</h3>
           <p><strong>Adult Tickets:</strong> ${adultTickets}</p>
           <p><strong>Child Tickets:</strong> ${childTickets}</p>
-          <p><strong>Total Tickets:</strong> ${adultTickets + childTickets}</p>
+          ${parentTickets ? `<p><strong>Visiting Parents Tickets:</strong> ${parentTickets}</p>` : ''}
           <p><strong>Total Paid:</strong> £${totalAmount.toFixed(2)}</p>
         </div>
 
